@@ -1,10 +1,12 @@
 {
-  "name": "social-autopilot",
+  "name": "postweft",
   "version": "0.1.0",
-  "description": "Plan, make and publish short videos and posts with Claude Code, Codex or Antigravity: video templates, a posting queue with best-time slots, and AI replies to comments and DMs through the official Instagram and Threads APIs.",
+  "description": "Plan, make and publish short videos and carousels with Claude Code, Codex or Antigravity: Instagram, Threads, YouTube Shorts, TikTok drafts and X posts through official APIs, a posting queue with best-time slots, AI replies to comments and DMs, and post statistics.",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "publish-queue": "node bin/publish-queue.mjs",
     "replies": "node bin/reply-comments.mjs",
@@ -13,6 +15,7 @@
     "check": "for f in bin/*.mjs lib/*.mjs video/*.mjs; do node --check $f || exit 1; done && node --test test/*.test.mjs"
   },
   "dependencies": {
-    "playwright": "^1.49.0"
+    "playwright": "^1.49.0",
+    "twitter-text": "^3.1.0"
   }
 }

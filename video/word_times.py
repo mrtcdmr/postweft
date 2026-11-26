@@ -3,7 +3,9 @@
 import sys, json, os
 from faster_whisper import WhisperModel
 
-model_dir = os.environ.get("WHISPER_MODEL_DIR", os.path.expanduser("~/.cache/social-autopilot-whisper"))
+legacy_cache = os.path.expanduser("~/.cache/social-autopilot-whisper")
+default_cache = legacy_cache if os.path.isdir(legacy_cache) else os.path.expanduser("~/.cache/postweft-whisper")
+model_dir = os.environ.get("WHISPER_MODEL_DIR", default_cache)
 m = WhisperModel(os.environ.get("WHISPER_MODEL", "small"), device="cpu", compute_type="int8", download_root=model_dir)
 lang = sys.argv[3] if len(sys.argv) > 3 else None
 segs, _ = m.transcribe(sys.argv[1], language=lang, word_timestamps=True,

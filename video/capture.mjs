@@ -3,6 +3,8 @@
 // a pure function of t) and window.ready (a promise that resolves when images/fonts are loaded).
 //   node video/capture.mjs <video-dir> all                 -> <video-dir>/frames/0000.jpg ... (30 fps, length = DURATION)
 //   node video/capture.mjs <video-dir> stills 0.5 2 4.2    -> <video-dir>/stills/ (quick previews)
+//   node video/capture.mjs <post-dir> slides               -> <post-dir>-slides/01.jpg ... (image / carousel templates:
+//        timeline.mjs exports SLIDES = number of slides, and window.render(i) draws slide i)
 // Files are served from the video folder; /_lib/ maps to this repo's video/lib (common.css, common.js).
 import { createServer } from "node:http";
 import { readFileSync, mkdirSync, existsSync, rmSync, statSync } from "node:fs";
@@ -12,7 +14,7 @@ import { chromium } from "playwright";
 
 const LIB = join(dirname(fileURLToPath(import.meta.url)), "lib");
 const [dirArg, mode = "all", ...times] = process.argv.slice(2);
-if (!dirArg) { console.error("usage: node video/capture.mjs <video-dir> all|stills [t ...]"); process.exit(1); }
+if (!dirArg) { console.error("usage: node video/capture.mjs <dir> all|stills [t ...]|slides"); process.exit(1); }
 const VDIR = resolve(dirArg);
 const TL = await import(pathToFileURL(join(VDIR, "timeline.mjs")).href);
 const W = TL.WIDTH || 1080, H = TL.HEIGHT || 1920, FPS = TL.FPS || 30;
@@ -66,7 +68,14 @@ const shot = async (t, path) => {
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await page.screenshot({ path, type: "jpeg", quality: 94 });
 };
-if (mode === "stills") {
+if (mode === "slides") {
+  if (!TL.SLIDES) { console.error("timeline.mjs must export SLIDES (number of slides)"); process.exit(1); }
+  const out = VDIR + "-slides";
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(out, { recursive: true });
+  for (let i = 0; i < TL.SLIDES; i++) await shot(i, join(out, `${String(i + 1).padStart(2, "0")}.jpg`));
+  console.log(`${TL.SLIDES} slide(s) in ${out}`);
+} else if (mode === "stills") {
   mkdirSync(join(VDIR, "stills"), { recursive: true });
   for (const t of times) await shot(Number(t), join(VDIR, "stills", `t${Number(t).toFixed(2)}.jpg`));
 } else {

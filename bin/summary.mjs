@@ -7,15 +7,15 @@ import { notify } from "../lib/notify.mjs";
 
 const now = Date.now(), day = 86400e3, q = readQueue();
 const t = (x) => fromLocal(x.at).getTime();
-const line = (x) => `${x.at.slice(5).replace("T", " ")} ${x.platform} ${x.kind}${x.link ? " " + x.link : ""}`;
+const line = (x) => `${x.at.slice(5).replace("T", " ")} ${x.platform} ${x.kind}${x.trial ? ` (trial:${x.trial})` : ""}${x.link ? " " + x.link : ""}`;
 const done = q.filter((x) => x.status === "published" && t(x) > now - day);
 const next = q.filter((x) => ["pending", "prepared"].includes(x.status || "pending") && t(x) >= now && t(x) < now + day);
-const bad = q.filter((x) => ["failed", "missed"].includes(x.status) && t(x) > now - day);
+const bad = q.filter((x) => x.status === "publishing" || (["failed", "missed"].includes(x.status) && t(x) > now - day));
 const left = q.filter((x) => ["pending", "prepared"].includes(x.status || "pending") && t(x) >= now).length;
 const msg = [
   `Published (24h): ${done.length}`, ...done.map(line), "",
   `Next 24h: ${next.length}`, ...next.map(line), "",
-  ...(bad.length ? [`Problems: ${bad.length}`, ...bad.map((x) => `${line(x)} (${x.status}${x.error ? ": " + x.error.slice(0, 80) : ""})`), ""] : []),
+  ...(bad.length ? [`Problems: ${bad.length}`, ...bad.map((x) => `${line(x)} (${x.status}${x.status === "publishing" ? ": verify on X before retrying" : x.error ? ": " + x.error.slice(0, 80) : ""})`), ""] : []),
   `Still queued: ${left}`,
 ].join("\n");
 if (process.argv.includes("--print")) console.log(msg);

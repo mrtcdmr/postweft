@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Answers comments on YOUR OWN recent Instagram and Threads posts (official APIs only).
+// Answers comments on YOUR OWN recent Instagram, Threads and YouTube posts (official APIs only).
 // The AI chosen in config.json ("ai") decides for each new comment: "reply" (writes the answer), "skip" (spam, emoji only...) or "notify" (you look at it).
 // Rules: prompts/comment-reply.md + your brand facts file. Run every 20 minutes from cron.
-//   node bin/reply-comments.mjs [--dry] [instagram|threads]
+//   node bin/reply-comments.mjs [--dry] [instagram|threads|youtube]
 // --dry shows the decisions without replying. The first real run only marks existing comments as seen.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -10,13 +10,14 @@ import { fileURLToPath } from "node:url";
 import { config, logger, loadState, statePath } from "../lib/config.mjs";
 import { api, IG_USER, waitReady } from "../lib/meta.mjs";
 import { askJson, brandFacts } from "../lib/ai.mjs";
+import { yt, recentVideos } from "../lib/youtube.mjs";
 import { mask, safeReply } from "../lib/text.mjs";
 import { notify } from "../lib/notify.mjs";
 import { today } from "../lib/time.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dry = process.argv.includes("--dry");
-const only = process.argv.slice(2).find((a) => ["instagram", "threads"].includes(a));
+const only = process.argv.slice(2).find((a) => ["instagram", "threads", "youtube"].includes(a));
 const log = logger("comments");
 const opt = config.replies?.comments || {};
 const state = loadState("comments", { seen: {}, first: true });
@@ -48,7 +49,25 @@ async function fetchThreads() {
   return out;
 }
 
+async function fetchYoutube() {
+  const { channel, videos } = await recentVideos(10);
+  const out = [];
+  for (const v of videos) {
+    let threads;
+    try { threads = (await yt("GET", "/commentThreads", { part: "snippet,replies", videoId: v.id, maxResults: 50, order: "time", textFormat: "plainText" })).items || []; }
+    catch { continue; } // comments turned off on this video
+    for (const t of threads) {
+      const top = t.snippet.topLevelComment.snippet;
+      if (top.authorChannelId?.value === channel.id) continue;
+      if ((t.replies?.comments || []).some((r) => r.snippet.authorChannelId?.value === channel.id)) continue;
+      out.push({ platform: "youtube", id: t.id, text: top.textOriginal || top.textDisplay, post: v.title || "", at: top.publishedAt });
+    }
+  }
+  return out;
+}
+
 async function sendReply(c, text) {
+  if (c.platform === "youtube") return yt("POST", "/comments", { part: "snippet" }, { snippet: { parentId: c.id, textOriginal: text } });
   if (c.platform === "instagram") return api("instagram", "POST", `/${c.id}/replies`, { message: text });
   const cont = (await api("threads", "POST", "/me/threads", { media_type: "TEXT", text, reply_to_id: c.id })).id;
   await waitReady("threads", cont, 8).catch(() => {});
@@ -56,7 +75,7 @@ async function sendReply(c, text) {
 }
 
 const fresh = [];
-for (const [p, fn] of [["instagram", fetchInstagram], ["threads", fetchThreads]]) {
+for (const [p, fn] of [["instagram", fetchInstagram], ["threads", fetchThreads], ["youtube", fetchYoutube]]) {
   if (only && p !== only) continue;
   if (!config[p] || config[p].replyToComments === false) continue;
   try {

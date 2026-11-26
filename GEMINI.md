@@ -5,5 +5,5 @@ Tools that only exist in other agents (for example sending files to the user's p
 same with terminal commands, or tell the user.
 
 @AGENTS.md
-@skill/social-autopilot/SKILL.md
-@skill/social-autopilot/references/platform-rules.md
+@skill/postweft/SKILL.md
+@skill/postweft/references/platform-rules.md

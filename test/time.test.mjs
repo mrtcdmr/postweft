@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 
 const home = mkdtempSync(join(tmpdir(), "sa-"));
 writeFileSync(join(home, "config.json"), JSON.stringify({ timezone: "Europe/Istanbul" }));
-process.env.SOCIAL_AUTOPILOT_HOME = home;
+process.env.POSTWEFT_HOME = home;
 const { fromLocal, toLocal } = await import("../lib/time.mjs");
 
 test("local time round trip in the configured zone", () => {

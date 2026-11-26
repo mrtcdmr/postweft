@@ -37,7 +37,7 @@ for (const c of convs) {
   const ms = c.messages?.data || []; // newest first
   const unseen = ms.filter((m) => !mine(m) && !state.seen[m.id]);
   for (const m of unseen) state.seen[m.id] = Date.now();
-  if (!unseen.length || state.first) continue;
+  if (!unseen.length || (state.first && !dry)) continue; // the first real run only marks messages as seen
   const last = ms[0];
   if (!last || mine(last) || Date.now() - Date.parse(last.created_time) > 23 * 3600e3) continue; // 24-hour window
   const history = ms.slice(0, 8).reverse().map((m) => ({ who: mine(m) ? "us" : "them", text: mask(m.message).slice(0, 400) || "(empty: photo, sticker or voice)" }));
@@ -46,7 +46,7 @@ for (const c of convs) {
 const wasFirst = state.first; state.first = false;
 for (const [k, t] of Object.entries(state.seen)) if (Date.now() - t > 30 * 86400e3) delete state.seen[k];
 save();
-if (!pending.length || wasFirst) { if (dry) console.log("no conversations waiting"); process.exit(0); }
+if (!pending.length || (wasFirst && !dry)) { if (dry) console.log("no conversations waiting"); process.exit(0); }
 
 const prompt = readFileSync(join(ROOT, "prompts/dm-reply.md"), "utf8")
   .replace("{{BRAND}}", brandFacts())

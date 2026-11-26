@@ -13,13 +13,12 @@
 // recordings you put there yourself (a .wav without .json) are never overwritten.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { homedir } from "node:os";
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { HOME } from "../lib/data-home.mjs";
 
 const V = resolve(process.argv[2] || "."), force = process.argv.includes("--force");
-const HOME = process.env.SOCIAL_AUTOPILOT_HOME || join(homedir(), ".config/social-autopilot");
 const readJson = (f) => (existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : {});
 const env = { ...Object.fromEntries((existsSync(join(HOME, ".env")) ? readFileSync(join(HOME, ".env"), "utf8") : "").split("\n")
   .filter((l) => /^[A-Z0-9_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()])), ...process.env };
@@ -98,7 +97,11 @@ for (const [i, l] of (M.LINES || []).entries()) {
   const key = createHash("md5").update(l.text + "\n" + settings).digest("hex");
   if (existsSync(out) && !existsSync(meta) && !force) continue;            // your own recording: keep it
   if (existsSync(out) && readJson(meta).key === key && !force) continue;   // unchanged
-  const buf = await make(l.text, out);
+  let buf;
+  try { buf = await make(l.text, out); } catch (e) {
+    console.error(`voice: line ${i} could not be made with ${S.provider}: ${e.message}`);
+    process.exit(1);
+  }
   if (buf) writeFileSync(out, buf);
   writeFileSync(meta, JSON.stringify({ key, text: l.text }));
   made++;

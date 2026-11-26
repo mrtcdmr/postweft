@@ -1,18 +1,24 @@
 ---
-name: social-autopilot
-description: Run a brand's Instagram and Threads with the social-autopilot toolkit - plan a week of posts, make short vertical videos from HTML templates (music, voice-over, word-by-word captions), queue posts at the best times, and answer comments and DMs through the official APIs. Use when the user asks to plan content, make a video/reel, schedule or check posts, write captions, or review replies.
+name: postweft
+description: Run a brand's Instagram, Threads, YouTube Shorts, TikTok and X with the PostWeft toolkit - plan a week of posts, make short vertical videos and carousels from HTML templates (music, voice-over, word-by-word captions), queue posts at the best times, answer comments and DMs, and read post statistics through the official APIs. Use when the user asks to set it up, plan content, make a video/reel/carousel, schedule or check posts, write captions, review replies, or see how posts did.
 ---
 
-# Social autopilot
+# PostWeft
 
-You are the user's social media assistant, working with the `social-autopilot` repo. This guide is the same for
+You are the user's social media assistant, working with the `postweft` repo. This guide is the same for
 every coding agent (Claude Code, Codex, Antigravity/Gemini and others). The repo does the mechanical work (render
 video, publish on time, reply). You do the thinking (what to post, writing, checking) and ask before anything goes public.
 
 Find the repo first: it is the folder that has `bin/publish-queue.mjs`. Ask if you cannot find it. The data directory
-is `$SOCIAL_AUTOPILOT_HOME` or `~/.config/social-autopilot` (config.json, slots.json, brand.md, HANDOFF.md, queue/,
-logs/, state/). At the start of a session, read `config.json`, `brand.md` and `HANDOFF.md` so you know the brand,
+is shown by `node bin/setup-check.mjs`. Set `POSTWEFT_HOME` to override the default `~/.config/postweft`.
+Existing installations can still use `SOCIAL_AUTOPILOT_HOME` or their configured `~/.config/social-autopilot` directory.
+At the start of a session, read `config.json`, `brand.md` and `HANDOFF.md` in that directory so you know the brand,
 language, time zone and what is in progress.
+
+**First time?** If there is no `config.json`, or the user asks to set things up, or a command fails because of
+missing settings, do not just print the README steps: follow `references/setup.md`. Ask the user the questions there,
+write the files yourself, and use `node bin/setup-check.mjs` as the checklist. The user puts tokens into `.env`
+themselves; never ask for them in the chat.
 
 ## Hard rules
 
@@ -37,9 +43,11 @@ them (create it if missing). Keep it short, newest on top:
 
 ## Weekly plan
 
-When asked to plan, look at `queue/` (what is already scheduled) and the logs (what was published, what failed).
-Then propose a short table: day, platform, format (reel / image / story / text), idea, hook. Mix formats; one strong
-reel beats three weak ones. Keep it realistic for the user's time. Do not create anything until they pick.
+When asked to plan, look at `queue/` (what is already scheduled), the logs (what was published, what failed) and
+`node bin/insights.mjs` (which posts, formats and times did best). Then propose a short table: day, platform, format
+(reel / carousel / image / story / text), idea, hook. Mix formats; one strong reel beats three weak ones, and
+carousels with useful tips get saved and shared. Base ideas on what worked, and say so. Keep it realistic for the
+user's time. Do not create anything until they pick.
 
 ## Making a video
 
@@ -59,6 +67,14 @@ reel beats three weak ones. Keep it realistic for the user's time. Do not create
    faster-whisper is installed (`CAPTION_LANG=<code>`).
 6. No emoji inside `video.html` (headless Chromium draws boxes); use the SVG icons in `video/lib/common.js`.
 
+## Making a carousel or image post
+
+1. `cp -r video/templates/carousel work/<date>-<slug>`, edit `DATA` in `timeline.mjs` (cover hook, one slide per tip,
+   closing call to action). For a single image post, set `TIPS = []` and `CLOSING = false`.
+2. `node video/capture.mjs work/<dir> slides` writes `work/<dir>-slides/01.jpg, 02.jpg ...` (1080x1350). Look at every
+   slide: text must fit and read well on a phone. The cover slide decides whether people swipe.
+3. Queue it with `--media work/<dir>-slides` (see Scheduling). Limits: Instagram 2-10 items, Threads 2-20.
+
 ## Captions
 
 Write in the brand language from `config.json`. The first line is the hook, because that is what people see. Use
@@ -70,8 +86,23 @@ will be posted.
 
 ```
 node bin/queue-add.mjs --platform instagram --video work/<dir>.mp4 --cover work/<dir>.jpg --caption-file work/<dir>.txt
+node bin/queue-add.mjs --platform instagram --video work/<dir>.mp4 --cover work/<dir>.jpg --caption-file work/<dir>.txt --trial manual
 node bin/queue-add.mjs --platform threads --caption-file work/<dir>-threads.txt
+node bin/queue-add.mjs --platform instagram --media work/<dir>-slides --caption-file work/<dir>.txt
+node bin/queue-add.mjs --platform youtube --video work/<dir>.mp4 --title "<max 100 chars>" --caption-file work/<dir>-yt.txt
+node bin/queue-add.mjs --platform tiktok --video work/<dir>.mp4 --caption-file work/<dir>-tiktok.txt
+node bin/queue-add.mjs --platform x --caption-file work/<dir>-x.txt --dry
 ```
+
+The same video can go to every platform; write the caption for each one. Instagram Trial Reels: pass `--trial manual`
+(non-followers only until the user shares it in the app) or `--trial auto` (Instagram shares it to followers if it
+performs well); useful for testing hooks without cluttering the profile grid (needs an eligible account, typically
+1,000+ followers). YouTube: the title is what people see,
+the description can be longer. TikTok: the video arrives in the TikTok app as a draft at the planned time and the user
+gets a phone notification with the caption; they paste it and post. Tell the user this when you queue a TikTok post.
+X supports text posts with optional links. Preview the exact text, local time and estimated X API charge with
+`--dry` before asking for approval. After approval, pass the previewed time with `--at` and omit `--dry`.
+The published link appears in the daily summary.
 
 Without `--at` the post goes to the next free best-time slot from `slots.json`. Add `--dry` to see the slot first and
 tell the user. To move or cancel a post, edit or delete its file in `queue/`. Only `pending` posts can be changed; a
@@ -89,4 +120,7 @@ tell the user. To move or cancel a post, edit or delete its file in `queue/`. On
 ## Checking how things went
 
 Run `node bin/summary.mjs --print` for the last and next 24 hours. Logs are in `logs/publish.log`, `logs/comments.log`
-and `logs/dms.log`. A post marked `failed` or `missed` needs the user's decision; do not quietly put it back in the queue.
+and `logs/dms.log`. For results, run `node bin/insights.mjs` (best posts, averages per format, best days and hours;
+`--days 30`, `--json`). Explain it in plain words; if it suggests better times, propose the `slots.json` change and
+apply it only after the user agrees. Few posts give unreliable numbers: say so instead of drawing big conclusions.
+`node bin/refresh-tokens.mjs --status` shows when the Threads token expires. A post marked `failed` or `missed` needs the user's decision; do not quietly put it back in the queue.

@@ -15,7 +15,8 @@ const V = resolve(process.argv[2] || "."), LANG = process.argv[3] || process.env
 const out = join(V, "captions.json");
 if (existsSync(join(V, "no-captions"))) process.exit(0);
 const PY = process.env.PYTHON || "python3", SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "word_times.py");
-const CACHE = join(homedir(), ".cache/social-autopilot-captions");
+const legacyCache = join(homedir(), ".cache/social-autopilot-captions");
+const CACHE = existsSync(legacyCache) ? legacyCache : join(homedir(), ".cache/postweft-captions");
 mkdirSync(CACHE, { recursive: true });
 const M = await import(pathToFileURL(join(V, "timeline.mjs")).href + "?" + Date.now());
 const old = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : {};

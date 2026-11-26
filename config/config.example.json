@@ -20,6 +20,22 @@
     "replyToComments": true
   },
 
+  "youtube": {
+    "categoryId": "22",
+    "madeForKids": false,
+    "language": "",
+    "redirectPort": 8765,
+    "replyToComments": true
+  },
+
+  "tiktok": {
+    "redirectUri": "https://example.com/tiktok-callback"
+  },
+
+  "x": {
+    "redirectUri": "http://127.0.0.1:8766/x-callback"
+  },
+
   "media": {
     "mode": "dir",
     "dir": "/var/www/html/media",
