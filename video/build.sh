@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Builds a finished vertical video from a template folder:
+#   music -> captions (optional) -> frames -> cover -> audio mix -> MP4
+# Usage: video/build.sh <video-dir> [--skip-frames]
+# Output: <video-dir>.mp4 and <video-dir>.jpg (cover = frame at POSTER seconds)
+# Needs: node, ffmpeg (or FFMPEG=/path/to/ffmpeg), Playwright Chromium (npx playwright install chromium).
+# Voice-over (optional): put one WAV per line in <video-dir>/voice/<i>.wav, i = index in LINES (any TTS or your own voice).
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+V="$(cd "$1" && pwd)"
+FF="${FFMPEG:-ffmpeg}"
+FP="${FFPROBE:-${FF%ffmpeg}ffprobe}"
+
+# Emoji do not render reliably in headless Chromium (empty boxes): use SVG icons instead.
+if grep -nP '[\x{2600}-\x{27BF}\x{1F000}-\x{1FFFF}]' "$V/video.html"; then echo "Emoji found in video.html, replace them with SVG"; exit 1; fi
+
+# Music: the template's own music.mjs if it has one, otherwise the shared generator
+if [ -f "$V/music.mjs" ]; then node "$V/music.mjs" "$V/timeline.mjs"; else node "$HERE/music.mjs" "$V/timeline.mjs"; fi
+
+# Captions only when there is a voice-over and faster-whisper is installed
+if [ -d "$V/voice" ] && ${PYTHON:-python3} -c "import faster_whisper" 2>/dev/null; then
+  node "$HERE/captions.mjs" "$V" "${CAPTION_LANG:-en}" || echo "captions failed, continuing without"
+fi
+
+[ "${2:-}" = "--skip-frames" ] || node "$HERE/capture.mjs" "$V" all
+
+FPS=$(node -e "import('$V/timeline.mjs').then(m=>console.log(m.FPS||30))")
+POSTER=$(node -e "import('$V/timeline.mjs').then(m=>console.log(String(Math.round((m.POSTER??0)*(m.FPS||30))).padStart(4,'0')))")
+cp "$V/frames/$POSTER.jpg" "$V.jpg"
+# Some platforms show the first frame as the thumbnail: make it the cover too
+cp "$V/frames/$POSTER.jpg" "$V/frames/0000.jpg"
+
+FFMPEG="$FF" node "$HERE/mix.mjs" "$V"
+"$FF" -hide_banner -loglevel error -y -framerate "$FPS" -i "$V/frames/%04d.jpg" -i "$V/audio.wav" \
+  -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -c:a aac -b:a 192k -movflags +faststart -shortest "$V.mp4"
+"$FP" -v error -show_entries format=duration,size -of compact "$V.mp4" || true
+echo "done: $V.mp4"

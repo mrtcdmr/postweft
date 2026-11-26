@@ -1,0 +1,15 @@
+# Add with: crontab -e   (adjust the path; cron uses the server's local time)
+# flock keeps two runs of the same job from overlapping.
+SA=$HOME/social-autopilot
+
+# publish due posts
+*/5 * * * *   cd $SA && flock -n /tmp/sa-publish.lock node bin/publish-queue.mjs >> $HOME/.config/social-autopilot/logs/cron.log 2>&1
+
+# answer comments on your own posts (08:00-23:59)
+*/20 8-23 * * * cd $SA && flock -n /tmp/sa-replies.lock node bin/reply-comments.mjs >> $HOME/.config/social-autopilot/logs/cron.log 2>&1
+
+# answer Instagram DMs (08:00-23:59); waits for the comments job instead of skipping
+*/15 8-23 * * * cd $SA && flock -w 600 /tmp/sa-replies.lock node bin/reply-dms.mjs >> $HOME/.config/social-autopilot/logs/cron.log 2>&1
+
+# evening summary to your phone
+0 22 * * *    cd $SA && node bin/summary.mjs >> $HOME/.config/social-autopilot/logs/cron.log 2>&1

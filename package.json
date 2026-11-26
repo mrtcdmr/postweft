@@ -1,0 +1,18 @@
+{
+  "name": "social-autopilot",
+  "version": "0.1.0",
+  "description": "Plan, make and publish short videos and posts with Claude Code: video templates, a posting queue with best-time slots, and AI replies to comments and DMs through the official Instagram and Threads APIs.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "publish-queue": "node bin/publish-queue.mjs",
+    "replies": "node bin/reply-comments.mjs",
+    "dms": "node bin/reply-dms.mjs",
+    "summary": "node bin/summary.mjs",
+    "check": "for f in bin/*.mjs lib/*.mjs video/*.mjs; do node --check $f || exit 1; done && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

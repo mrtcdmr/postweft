@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.log
+# video build output
+frames/
+stills/
+music.wav
+audio.wav
+mix.args.json
+captions.json
+*.mp4
+work/

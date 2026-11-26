@@ -1,0 +1,42 @@
+{
+  "timezone": "Europe/Istanbul",
+
+  "brand": {
+    "name": "Example Coffee",
+    "language": "English",
+    "factsFile": "brand.md",
+    "allowedLinks": ["example.com"]
+  },
+
+  "instagram": {
+    "userId": "17840000000000000",
+    "apiBase": "https://graph.facebook.com/v23.0",
+    "replyToComments": true
+  },
+
+  "threads": {
+    "apiBase": "https://graph.threads.net/v1.0",
+    "topicTag": "Coffee",
+    "replyToComments": true
+  },
+
+  "media": {
+    "mode": "dir",
+    "dir": "/var/www/html/media",
+    "publicBaseUrl": "https://example.com/media",
+    "uploadCommand": "",
+    "cleanupCommand": ""
+  },
+
+  "replies": {
+    "comments": { "dailyLimit": 40 },
+    "dms": { "dailyLimit": 40, "perConversation": 6 }
+  },
+
+  "notify": {
+    "ntfyServer": "https://ntfy.sh/",
+    "ntfyTopic": "pick-a-long-random-name-here"
+  },
+
+  "claude": { "bin": "claude" }
+}

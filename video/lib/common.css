@@ -1,0 +1,23 @@
+/* Shared look for templates (1080x1920). Change the variables to match your brand. */
+:root {
+  --bg: #6d28d9; --bg-dots: rgb(0 0 0 / .12); --paper: #f5f0ff; --ink: #111;
+  --accent: #d9ff3f; --accent2: #ff7ac6; --text-on-bg: #fff;
+  --display-font: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --body-font: "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+body { font-family: var(--body-font); color: var(--ink); -webkit-font-smoothing: antialiased; }
+#stage { position: absolute; inset: 0; overflow: hidden; }
+.scene { position: absolute; inset: 0; visibility: hidden; }
+.dots { background-color: var(--bg); background-image: radial-gradient(var(--bg-dots) 3px, transparent 3px); background-size: 60px 60px; }
+.paper { background-color: var(--paper); background-image: radial-gradient(rgb(17 17 17 / .08) 3px, transparent 3px); background-size: 60px 60px; }
+.abs { position: absolute; will-change: transform, opacity; }
+.disp { font-family: var(--display-font); font-weight: 900; letter-spacing: -0.02em; }
+.head { left: 80px; right: 80px; font-size: 104px; line-height: 1.08; color: var(--text-on-bg); }
+.card { background: #fff; border-radius: 44px; }
+.brut { border: 6px solid var(--ink); box-shadow: 12px 12px 0 var(--ink); }
+.brut-sm { border: 5px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+.chip { display: inline-flex; align-items: center; gap: 14px; border-radius: 999px; padding: 14px 32px; font-weight: 800; font-size: 40px; white-space: nowrap; }
+.ico { display: inline-grid; place-items: center; flex: none; }
+.ico svg { width: 100%; height: 100%; }
