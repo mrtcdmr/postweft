@@ -1,5 +1,5 @@
-// Procedural background music + sound effects in one track (no samples, no licenses): 120 BPM pop loop with two
-// chord progressions, "la" (Am-F-C-G) and "fa" (F-C-Dm-Bb). Effects are in the same key and the same reverb room.
+// Procedural background music + sound effects in one track (no samples, no licenses): 120 BPM pop loop.
+// PROG in timeline.mjs picks the mood: "bright" (default), "calm" or "moody". Effects are in the same key and room.
 // Usage: node music.mjs <video>/timeline.mjs   -> <video>/music.wav (44.1 kHz, 16 bit, stereo)
 import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -81,15 +81,20 @@ function whoosh(dur) {
 
 // ---- Harmony ----
 const PROGS = {
-  la: { CH: { Am: [57, 60, 64], F: [53, 57, 60], C: [48, 55, 60, 64], G: [55, 59, 62] }, ROOT: { Am: 45, F: 41, C: 48, G: 43 },
-        BARS: ["Am", "F", "C", "G", "Am", "F", "C", "G", "F", "C"], END: [48, 55, 60, 64, 67] },
-  fa: { CH: { F: [53, 57, 60], C: [55, 60, 64], Dm: [53, 57, 62], Bb: [53, 58, 62] }, ROOT: { F: 41, C: 48, Dm: 50, Bb: 46 },
-        BARS: ["F", "C", "Dm", "Bb", "F", "C", "Dm", "Bb", "C", "F"], END: [41, 48, 53, 57, 60] },
+  // D-A-Bm-G: bright, upbeat (default)
+  bright: { CH: { D: [62, 66, 69], A: [61, 64, 69], Bm: [62, 66, 71], G: [62, 67, 71] }, ROOT: { D: 38, A: 45, Bm: 47, G: 43 },
+            BARS: ["D", "A", "Bm", "G", "D", "A", "Bm", "G", "A", "D"], END: [50, 57, 62, 66, 69] },
+  // Em-C-G-D: calm, warm
+  calm: { CH: { Em: [59, 64, 67], C: [60, 64, 67], G: [59, 62, 67], D: [57, 62, 66] }, ROOT: { Em: 40, C: 48, G: 43, D: 50 },
+          BARS: ["Em", "C", "G", "D", "Em", "C", "G", "D", "C", "G"], END: [43, 50, 55, 59, 62] },
+  // Gm-Eb-Bb-F: moody, serious
+  moody: { CH: { Gm: [55, 58, 62], Eb: [55, 58, 63], Bb: [53, 58, 62], F: [53, 57, 60] }, ROOT: { Gm: 43, Eb: 39, Bb: 46, F: 41 },
+           BARS: ["Gm", "Eb", "Bb", "F", "Gm", "Eb", "Bb", "F", "Eb", "Gm"], END: [43, 50, 55, 58, 62] },
 };
-const { CH, ROOT, END } = PROGS[T.PROG ?? "fa"];
+const { CH, ROOT, END } = PROGS[T.PROG ?? "bright"];
 // Videos longer than 20 s repeat the main loop (first 8 bars) and end with the same 2-bar ending.
 // A 20 s video gets exactly 10 bars (DUR=20 -> FIN=19).
-const DUR = T.DURATION, FIN = DUR - 1.0, OLCU = Math.round(DUR / 2), B0 = PROGS[T.PROG ?? "fa"].BARS;
+const DUR = T.DURATION, FIN = DUR - 1.0, OLCU = Math.round(DUR / 2), B0 = PROGS[T.PROG ?? "bright"].BARS;
 const BARS = OLCU <= B0.length ? B0 : [...Array.from({ length: OLCU - 2 }, (_, i) => B0[i % 8]), ...B0.slice(-2)];
 const chordAt = (t) => BARS[Math.min(BARS.length - 1, Math.floor(t / 2))];
 
@@ -119,11 +124,13 @@ for (let bar = 0; bar < OLCU; bar++) {
   const c = BARS[bar]; const dur = bar === OLCU - 1 ? 2.0 : 2.05;
   CH[c].forEach((m, i) => add(bar * 2, tone(hz(m + 12), dur, { a: 0.25, d: 3, harm: [1, 0.2] }), 0.035, i % 2 ? 0.4 : -0.4, 0.4));
 }
-// Pluck arpeggio: sixteenths, chord tones
-for (let s = 0; s < (FIN * 4) / BEAT; s++) {
-  const t = s * BEAT / 4; if (t < 2 || t >= FIN) continue;
-  const c = CH[chordAt(t)]; const m = c[s % c.length] + 12 + (s % 8 >= 4 ? 12 : 0);
-  add(t, pluck(hz(m), 0.4), 0.16, s % 2 ? 0.35 : -0.35, 0.35);
+// Pluck arpeggio: syncopated eighths, up-down through the chord, octave lift on the second half of each bar
+const ARP = [0, 2, 1, 2, 0, 2, 1, -1]; // -1 = rest
+for (let s = 0; s < (FIN * 2) / BEAT; s++) {
+  const t = s * BEAT / 2; if (t < 2 || t >= FIN) continue;
+  const k = ARP[s % 8]; if (k < 0) continue;
+  const c = CH[chordAt(t)]; const m = c[k] + 12 + (s % 8 >= 4 ? 12 : 0);
+  add(t, pluck(hz(m), 0.5), 0.17, s % 2 ? 0.3 : -0.3, 0.35);
 }
 // Final chord: rings out
 END.forEach((m, i) => add(FIN, tone(hz(m + 12), 1.0, { a: 0.01, d: 0.6, harm: [1, 0.3] }), 0.09, (i - 2) * 0.2, 0.5));

@@ -12,7 +12,7 @@ export const DATA = {
 };
 
 export const WIDTH = 1080, HEIGHT = 1920, FPS = 30;
-export const BPM = 120, BEAT = 0.5, PROG = "fa";
+export const BPM = 120, BEAT = 0.5, PROG = "bright"; // music mood: "bright" | "calm" | "moody"
 export const DURATION = 14;
 export const STARTS = [3, 5.5, 8];          // when each point appears
 export const END = 10.5;                     // call to action starts here

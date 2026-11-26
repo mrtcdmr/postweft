@@ -24,7 +24,7 @@
   </div>
   <div id="cta" class="scene paper">
     <div id="ctaText" class="abs head disp" style="top:700px;color:var(--ink);text-align:center"></div>
-    <div id="ctaChip" class="abs chip brut-sm" style="left:0;top:0;background:var(--accent);font-size:52px"></div>
+    <div id="ctaChip" class="abs chip raised-sm" style="left:0;top:0;background:var(--accent);font-size:52px"></div>
   </div>
 </div>
 
@@ -38,8 +38,8 @@ $("listHead").textContent = DATA.hook;
 $("ctaText").textContent = DATA.cta;
 $("ctaChip").innerHTML = `${DATA.handle} ${ico(ICON.arrow(), 52)}`;
 $("points").innerHTML = DATA.points.map((p, i) => `
-  <div id="p${i}" class="abs pt card brut" style="top:${430 + i * 400}px">
-    <div class="num disp brut-sm">${i + 1}</div>
+  <div id="p${i}" class="abs pt card raised" style="top:${430 + i * 400}px">
+    <div class="num disp raised-sm">${i + 1}</div>
     <div><h2 class="disp">${p.title}</h2><p>${p.note}</p></div>
   </div>`).join("");
 

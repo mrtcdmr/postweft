@@ -31,8 +31,8 @@ const I = (body, fill = "none", stroke = "#111", w = 2.4) => `<svg viewBox="0 0 
 const ICON = {
   check: (c = "#111") => I('<path d="M5 12.5l4.5 4.5L19 7.5"/>', "none", c, 3),
   star: (c = "#111", f = "#ffe14d") => I('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>', f, c),
-  heart: (c = "#111", f = "#ff7ac6") => I('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>', f, c),
-  pin: (c = "#111", f = "#d9ff3f") => I('<path d="M12 21s-6.5-6.2-6.5-11A6.5 6.5 0 0 1 18.5 10c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4" fill="#fff"/>', f, c),
+  heart: (c = "#111", f = "#ff6f59") => I('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>', f, c),
+  pin: (c = "#111", f = "#ffb547") => I('<path d="M12 21s-6.5-6.2-6.5-11A6.5 6.5 0 0 1 18.5 10c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4" fill="#fff"/>', f, c),
   arrow: (c = "#111") => I('<path d="M5 12h14M13 6l6 6-6 6"/>', "none", c, 3),
 };
 const ico = (svg, size = 48) => `<span class="ico" style="width:${size}px;height:${size}px">${svg}</span>`;
