@@ -38,5 +38,9 @@
     "ntfyTopic": "pick-a-long-random-name-here"
   },
 
-  "claude": { "bin": "claude" }
+  "ai": {
+    "provider": "claude",
+    "model": "",
+    "command": ""
+  }
 }

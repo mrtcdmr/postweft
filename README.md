@@ -2,16 +2,19 @@
 
 [Türkçe](README.tr.md)
 
-Run a small brand's Instagram and Threads with [Claude Code](https://claude.com/claude-code) as your social media
-assistant. Free and open source (MIT).
+Run a small brand's Instagram and Threads with an AI coding agent as your social media assistant:
+**Claude Code, OpenAI Codex or Google Antigravity / Gemini CLI**, or switch between them. Free and open source (MIT).
 
 - **Video from HTML.** Vertical 1080x1920 videos from simple HTML templates, rendered frame by frame. Built-in
   license-free music generator, optional voice-over and word-by-word captions.
 - **Posting queue with best times.** Each post is a small JSON file. It goes into the next free slot from your own
   "best times" table and is published on time by cron.
-- **Replies with judgment.** Claude answers comments on your own posts and Instagram DMs. Complaints, offers and
+- **Replies with judgment.** An AI of your choice (Claude, Codex, Gemini or any command) answers comments on your
+  own posts and Instagram DMs. Complaints, offers and
   anything unclear are sent to your phone instead.
-- **A Claude Code skill.** Teaches Claude the workflow: plan, write, render, show you, and publish only after you say yes.
+- **One guide for every agent.** `AGENTS.md` (Codex, Antigravity, Cursor...), `CLAUDE.md` and `GEMINI.md` all load the
+  same workflow: plan, write, render, show you, and publish only after you say yes. A shared `HANDOFF.md` lets you
+  switch agents mid-week (for example when one runs out of quota) without losing track.
 
 Everything uses the **official** Instagram Graph API and Threads API. There is no browser automation, no scraping, no
 auto-following and no commenting on strangers' posts. Those get accounts banned, and they are spam.
@@ -22,7 +25,7 @@ auto-following and no commenting on strangers' posts. Those get accounts banned,
 ## How it fits together
 
 ```
-you ── talk to ──> Claude Code (+ skill/social-autopilot)
+you ── talk to ──> Claude Code / Codex / Antigravity (AGENTS.md, CLAUDE.md, GEMINI.md)
                       │ writes captions, edits templates, renders videos, asks before queueing
                       v
 video/build.sh ──> work/my-video.mp4 ──> bin/queue-add.mjs ──> ~/.config/social-autopilot/queue/*.json
@@ -30,13 +33,15 @@ video/build.sh ──> work/my-video.mp4 ──> bin/queue-add.mjs ──> ~/.co
                                                                      v
                                                     bin/publish-queue.mjs ──> Instagram / Threads API
 
-cron ──> bin/reply-comments.mjs, bin/reply-dms.mjs ──> claude -p (no tools) ──> reply via API, or ntfy to your phone
+cron ──> bin/reply-comments.mjs, bin/reply-dms.mjs ──> AI (claude | codex | gemini | command) ──> reply via API, or ntfy
 cron ──> bin/summary.mjs ──> daily summary to your phone
 ```
 
 ## Requirements
 
-- Linux or macOS with Node.js 20+, ffmpeg, and [Claude Code](https://claude.com/claude-code) (`claude` on PATH, logged in)
+- Linux or macOS with Node.js 20+ and ffmpeg
+- At least one AI: [Claude Code](https://claude.com/claude-code), [Codex CLI](https://github.com/openai/codex), or a
+  Gemini API key (works well alongside Antigravity, which has no headless mode for cron jobs)
 - Instagram professional (business or creator) account, Threads account, and a Meta developer app with the
   permissions listed in `config/env.example`
 - A place to host files at a public URL for a few minutes while Meta downloads them: a folder your web server
@@ -58,12 +63,16 @@ cp config/env.example         ~/.config/social-autopilot/.env && chmod 600 ~/.co
 cp prompts/brand.example.md   ~/.config/social-autopilot/brand.md
 ```
 
-1. **config.json**: time zone, brand language, your Instagram user id, media hosting, ntfy topic.
+1. **config.json**: time zone, brand language, your Instagram user id, media hosting, ntfy topic, and `ai.provider`
+   for the reply bots: `claude` (default), `codex`, `gemini` (needs `GEMINI_API_KEY`) or `command` (any program that
+   reads the prompt on stdin and prints the answer, for example a local model).
 2. **.env**: your long-lived tokens. Edit the file yourself. Never paste tokens into a chat.
 3. **brand.md**: the facts the reply bot may use. Anything missing is sent to you instead of guessed.
 4. **slots.json**: when to post. The example times are placeholders. Use your own account insights.
-5. **The skill**: `mkdir -p ~/.claude/skills && cp -r skill/social-autopilot ~/.claude/skills/`, then ask Claude Code
-   things like *"plan next week"*, *"make a reel about our new blend"*, *"what's scheduled tomorrow?"*.
+5. **Your agent**: open the repo folder in Claude Code, Codex or Antigravity; it picks up `CLAUDE.md`, `AGENTS.md`
+   or `GEMINI.md` by itself. For Claude Code you can also install the skill globally:
+   `mkdir -p ~/.claude/skills && cp -r skill/social-autopilot ~/.claude/skills/`. Then ask things like
+   *"plan next week"*, *"make a reel about our new blend"*, *"what's scheduled tomorrow?"*.
 6. **Cron**: see `examples/crontab.txt`.
 
 ## Try it without any account

@@ -1,7 +1,7 @@
 {
   "name": "social-autopilot",
   "version": "0.1.0",
-  "description": "Plan, make and publish short videos and posts with Claude Code: video templates, a posting queue with best-time slots, and AI replies to comments and DMs through the official Instagram and Threads APIs.",
+  "description": "Plan, make and publish short videos and posts with Claude Code, Codex or Antigravity: video templates, a posting queue with best-time slots, and AI replies to comments and DMs through the official Instagram and Threads APIs.",
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=20" },

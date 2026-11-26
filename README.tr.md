@@ -2,17 +2,20 @@
 
 [English](README.md)
 
-Küçük bir markanın Instagram ve Threads hesaplarını, sosyal medya asistanın olarak
-[Claude Code](https://claude.com/claude-code) ile yönetmek için ücretsiz ve açık kaynak (MIT) bir araç seti.
+Küçük bir markanın Instagram ve Threads hesaplarını bir yapay zekâ asistanıyla yönetmek için ücretsiz ve açık kaynak
+(MIT) bir araç seti. **Claude Code, OpenAI Codex ve Google Antigravity / Gemini CLI** ile çalışır; aralarında
+geçiş de yapabilirsin.
 
 - **HTML'den video.** Basit HTML şablonlarından dikey 1080x1920 video, kare kare üretilir. Telifsiz müzik üretici,
   isteğe bağlı seslendirme ve kelime kelime altyazı içerir.
 - **En iyi saatlerde paylaşım kuyruğu.** Her paylaşım küçük bir JSON dosyasıdır. Senin "en iyi saatler" tablondaki ilk
   boş zamana yerleşir, cron zamanı gelince yayınlar.
-- **Düşünerek cevap.** Claude kendi gönderilerine gelen yorumlara ve Instagram DM'lerine cevap verir. Şikâyet, iş
+- **Düşünerek cevap.** Seçtiğin yapay zekâ (Claude, Codex, Gemini ya da herhangi bir komut) kendi gönderilerine
+  gelen yorumlara ve Instagram DM'lerine cevap verir. Şikâyet, iş
   teklifi ve emin olmadığı her şey telefonuna bildirim olarak gelir.
-- **Claude Code becerisi (skill).** Claude'a çalışma düzenini öğretir: planla, yaz, videoyu üret, sana göster, sadece
-  sen "evet" deyince yayınla.
+- **Her asistan için tek kılavuz.** `AGENTS.md` (Codex, Antigravity, Cursor...), `CLAUDE.md` ve `GEMINI.md` aynı
+  çalışma düzenini yükler: planla, yaz, videoyu üret, sana göster, sadece sen "evet" deyince yayınla. Ortak
+  `HANDOFF.md` devir notu sayesinde hafta ortasında asistan değiştirebilirsin (ör. birinin kotası bitince).
 
 Her şey **resmî** Instagram Graph API ve Threads API ile çalışır. Tarayıcı otomasyonu, veri kazıma, otomatik takip ve
 yabancıların gönderilerine yorum yoktur. Bunlar hesap kapattırır ve spam'dir.
@@ -35,12 +38,16 @@ cp config/env.example         ~/.config/social-autopilot/.env && chmod 600 ~/.co
 cp prompts/brand.example.md   ~/.config/social-autopilot/brand.md
 ```
 
-1. **config.json**: saat dilimi, marka dili (ör. `"Turkish"`), Instagram kullanıcı numarası, dosya barındırma, ntfy konusu.
+1. **config.json**: saat dilimi, marka dili (ör. `"Turkish"`), Instagram kullanıcı numarası, dosya barındırma, ntfy
+   konusu ve cevap botunun yapay zekâsı `ai.provider`: `claude` (varsayılan), `codex`, `gemini` (`GEMINI_API_KEY`
+   gerekir) ya da `command` (istemi alıp cevabı yazan herhangi bir program, ör. yerel bir model).
 2. **.env**: uzun ömürlü anahtarların. Dosyayı kendin düzenle, anahtarları sohbete yapıştırma.
 3. **brand.md**: cevap botunun kullanabileceği bilgiler. Burada olmayan soru tahmin edilmez, sana gelir.
 4. **slots.json**: ne zaman paylaşılacağı. Örnek saatler sadece yer tutucudur, kendi hesap istatistiklerini kullan.
-5. **Beceri**: `mkdir -p ~/.claude/skills && cp -r skill/social-autopilot ~/.claude/skills/`. Sonra Claude Code'a
-   *"gelecek haftayı planla"*, *"yeni ürünümüz için bir Reels yap"*, *"yarın ne paylaşılacak?"* gibi şeyler söyle.
+5. **Asistanın**: depo klasörünü Claude Code, Codex ya da Antigravity'de aç; `CLAUDE.md`, `AGENTS.md` ya da
+   `GEMINI.md` dosyasını kendisi okur. Claude Code için beceriyi her yerde kullanmak istersen:
+   `mkdir -p ~/.claude/skills && cp -r skill/social-autopilot ~/.claude/skills/`. Sonra *"gelecek haftayı planla"*,
+   *"yeni ürünümüz için bir Reels yap"*, *"yarın ne paylaşılacak?"* gibi şeyler söyle.
 6. **Cron**: `examples/crontab.txt` dosyasına bak.
 
 Gereken her şey, komutlar ve kendi şablonunu yapma: [README.md](README.md).
