@@ -7,8 +7,8 @@ Küçük bir markanın Instagram, Threads, YouTube Shorts, TikTok ve X hesaplar�
 geçiş de yapabilirsin.
 
 - **HTML'den video ve kaydırmalı gönderi.** Basit HTML şablonlarından dikey 1080x1920 video ve 1080x1350 kaydırmalı
-  (carousel) ya da tek görselli gönderi üretilir. Telifsiz müzik üretici,
-  seslendirme (ElevenLabs, OpenAI, Gemini ya da bilgisayardaki bir seslendirme programı) ve kelime kelime altyazı içerir.
+  (carousel) ya da tek görselli gönderi üretilir. Telifsiz müzik üretici veya kendi `.mp3`/`.wav` parçaların,
+  seslendirme (ElevenLabs, OpenAI, Gemini, Piper, Edge TTS ya da yerel program) ve kelime kelime altyazı içerir.
 - **En iyi saatlerde paylaşım kuyruğu.** Her paylaşım küçük bir JSON dosyasıdır. Senin "en iyi saatler" tablondaki ilk
   boş zamana yerleşir, cron zamanı gelince yayınlar. Instagram (Deneme Reels dâhil), Threads ve X'e doğrudan, YouTube Shorts'a YouTube'un kendi
   zamanlamasıyla gider; TikTok'ta video uygulamana taslak olarak düşer, açıklamayı yapıştırıp sen paylaşırsın (TikTok
@@ -53,9 +53,16 @@ Mevcut kurulumların verileri yerinde kalabilir. PostWeft `SOCIAL_AUTOPILOT_HOME
 3. **brand.md**: cevap botunun kullanabileceği bilgiler. Burada olmayan soru tahmin edilmez, sana gelir.
 4. **slots.json**: ne zaman paylaşılacağı. Örnek saatler sadece yer tutucudur, kendi hesap istatistiklerini kullan.
 5. **Asistanın**: depo klasörünü Claude Code, Codex ya da Antigravity'de aç; `CLAUDE.md`, `AGENTS.md` ya da
-   `GEMINI.md` dosyasını kendisi okur. Claude Code için beceriyi her yerde kullanmak istersen:
-   `mkdir -p ~/.claude/skills && cp -r skill/postweft ~/.claude/skills/`. Sonra *"gelecek haftayı planla"*,
-   *"yeni ürünümüz için bir Reels yap"*, *"yarın ne paylaşılacak?"* gibi şeyler söyle.
+   `GEMINI.md` dosyasını kendisi okur. Beceriyi (skill) her klasörden kullanılabilir yapmak için:
+   ```bash
+   # Claude Code
+   mkdir -p ~/.claude/skills && cp -r skill/postweft ~/.claude/skills/
+   # Antigravity / Gemini
+   mkdir -p ~/.gemini/config/skills && cp -r skill/postweft ~/.gemini/config/skills/
+   # Codex / .agents
+   mkdir -p ~/.agents/skills && cp -r skill/postweft ~/.agents/skills/
+   ```
+   Sonra *"gelecek haftayı planla"*, *"yeni ürünümüz için bir Reels yap"*, *"yarın ne paylaşılacak?"* gibi şeyler söyle.
 6. **Cron**: `examples/crontab.txt` dosyasına bak.
 
 Ya da asistana yaptır: `npm install` sonrası klasörü asistanında aç ve *"kurulumu yap"* de. Marka hakkında sorular
@@ -116,6 +123,29 @@ ses hizmetine gönderir. PostWeft çıkan sesi FFmpeg ile WAV'a dönüştürür.
 ```
 
 İngilizce için `en-US-AndrewNeural` seçebilirsin. [Edge TTS belgeleri](https://github.com/rany2/edge-tts)
+
+### Çok dilli üretim (`LANG` + `voice.voices`)
+
+Birden çok dilde video üreten markalar için `config.json` içinde dil başına ses eşlemesi yapılabilir:
+
+```json
+{
+  "voice": {
+    "provider": "edge-tts",
+    "voice": "en-US-AndrewNeural",
+    "voices": { "en": "en-US-AndrewNeural", "tr": "tr-TR-AhmetNeural" },
+    "speed": 1.0
+  }
+}
+```
+
+Videonun `timeline.mjs` dosyasına tek satır `export const LANG = "tr";` yazdığında hem `video/voice.mjs` doğru sesi/modeli seçer hem de `video/build.sh` altyazı dilini kendiliğinden ayarlar (`CAPTION_LANG` yine üzerine yazabilir).
+
+## Şablonlar ve gerçek müzik
+
+- **Markaya özel şablonlar:** Açık kaynak depoyu kirletmemek için kendi şablonlarını `$POSTWEFT_HOME/templates/<ad>/` altında tutabilirsin. `video/capture.mjs` güvenlik gereği video klasörü dışına (`../`) erişmediğinden görselleri ve yerel `.woff2` yazı tiplerini şablonun kendi `assets/` klasöründe taşı.
+- **Gerçek müzik dosyası:** Yerleşik müzik üretici yerine `$POSTWEFT_HOME/music/` klasörüne `.mp3`/`.wav` koyup `timeline.mjs` içinde `export const MUSIC_TRACK = "sakin.mp3"` (veya tam dosya yolu, ya da `config.json` → `video.musicTrack`) ile `MUSIC_OFFSET` (başlangıç saniyesi) belirtebilirsin. FFmpeg parçayı `DURATION` süresine göre döngüleyip keser, yumuşak giriş/çıkış ve ses seviyesi dengelemesi uygular; konuşma altındaki varsayılan müzik düzeyi `MUSIC_LEVEL = 0.26`'dır.
+- **Altyazı teması ve hızlı yeniden derleme:** Altyazı görünümü `video.html` içinde `--caption-font`, `--caption-bg`, `--caption-on-bg`, `--caption-on-fg` CSS değişkenleriyle özelleştirilebilir. Yalnızca müzik/mikste değişiklik yaptıysan kareleri baştan almamak için `bash video/build.sh <klasör> --skip-frames` kullan.
 
 ## Lisans
 

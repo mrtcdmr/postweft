@@ -6,8 +6,8 @@ Run a small brand's Instagram, Threads, YouTube Shorts, TikTok and X with an AI 
 **Claude Code, OpenAI Codex or Google Antigravity / Gemini CLI**, or switch between them. Free and open source (MIT).
 
 - **Video and carousels from HTML.** Vertical 1080x1920 videos and 1080x1350 carousel or image posts from simple
-  HTML templates. Built-in license-free music generator, voice-over from ElevenLabs, OpenAI, Gemini or a local TTS,
-  and word-by-word captions.
+  HTML templates. Built-in license-free music generator or your own `.mp3`/`.wav` tracks, voice-over from ElevenLabs,
+  OpenAI, Gemini, Piper, Edge TTS or a local TTS, and word-by-word captions.
 - **Posting queue with best times.** Each post is a small JSON file. It goes into the next free slot from your own
   "best times" table and is published on time by cron: Instagram (including Trial Reels), Threads and X directly, YouTube Shorts scheduled on
   YouTube, and TikTok as a draft in your TikTok app (TikTok allows direct posting only for audited apps).
@@ -92,9 +92,16 @@ existing `~/.config/social-autopilot` directory. Use `POSTWEFT_HOME` to select a
 3. **brand.md**: the facts the reply bot may use. Anything missing is sent to you instead of guessed.
 4. **slots.json**: when to post. The example times are placeholders. Use your own account insights.
 5. **Your agent**: open the repo folder in Claude Code, Codex or Antigravity; it picks up `CLAUDE.md`, `AGENTS.md`
-   or `GEMINI.md` by itself. For Claude Code you can also install the skill globally:
-   `mkdir -p ~/.claude/skills && cp -r skill/postweft ~/.claude/skills/`. Then ask things like
-   *"plan next week"*, *"make a reel about our new blend"*, *"what's scheduled tomorrow?"*.
+   or `GEMINI.md` by itself. To install the skill globally so any workspace can use it:
+   ```bash
+   # Claude Code
+   mkdir -p ~/.claude/skills && cp -r skill/postweft ~/.claude/skills/
+   # Antigravity / Gemini
+   mkdir -p ~/.gemini/config/skills && cp -r skill/postweft ~/.gemini/config/skills/
+   # Codex / .agents
+   mkdir -p ~/.agents/skills && cp -r skill/postweft ~/.agents/skills/
+   ```
+   Then ask things like *"plan next week"*, *"make a reel about our new blend"*, *"what's scheduled tomorrow?"*.
 6. **Cron**: see `examples/crontab.txt`.
 
 Or let your agent do it: after `npm install`, open the folder in your agent and say *"set me up"*. It asks about
@@ -150,11 +157,32 @@ the audio to WAV. Set:
 
 For Turkish, set `voice` to `tr-TR-AhmetNeural`. [Edge TTS documentation](https://github.com/rany2/edge-tts)
 
+### Multi-language videos (`LANG` + `voice.voices`)
+
+If a brand publishes in more than one language, map language codes once in `config.json`:
+
+```json
+{
+  "voice": {
+    "provider": "edge-tts",
+    "voice": "en-US-AndrewNeural",
+    "voices": { "en": "en-US-AndrewNeural", "tr": "tr-TR-AhmetNeural" },
+    "speed": 1.0
+  }
+}
+```
+
+Then put a single `export const LANG = "tr";` in `timeline.mjs`: `video/voice.mjs` picks the matching voice/model (or a
+per-language object `{ "voice": "...", "speed": 1.05 }`) and `video/build.sh` uses the same language for word-by-word
+captions automatically (`CAPTION_LANG` still overrides it). Works with Piper (`model`), ElevenLabs (`voiceId`),
+OpenAI/Gemini/Edge TTS (`voice`) and `command`.
+
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `bash video/build.sh <dir>` | music + voice-over + captions + frames + mix -> `<dir>.mp4` and cover `<dir>.jpg` |
+| `bash video/build.sh <dir> --skip-frames` | rebuild audio and MP4 without re-rendering frames (after music/mix edits) |
 | `node video/voice.mjs <dir> [--force]` | generate the voice-over only, to listen first |
 | `node video/capture.mjs <dir> stills 1 2.5` | preview frames only |
 | `node video/capture.mjs <dir> slides` | carousel / image template -> `<dir>-slides/01.jpg ...` |
@@ -188,11 +216,23 @@ Tell your agent which account you mean ("for the cafe account...") so it uses th
 
 ## Making your own templates
 
-A template is a folder with `video.html` and `timeline.mjs`. The page defines `window.render(t)`, which draws the
-frame at second `t` and must depend only on `t`. It also defines `window.ready`, a promise that resolves when images and
-fonts are loaded. `timeline.mjs` exports `DURATION`, `POSTER` (cover time), `LINES` (voice-over) and, optionally,
-effect times (`POPS`, `CUTS`, `STAMPS`, `BELLS`, `SUCCESS`, `TYPES`, `RISES`) that the music generator turns into
-sounds in the same key. Shared helpers live in `video/lib/`. Don't use emoji in templates, use SVG.
+A template is a folder with `video.html` and `timeline.mjs`. Keep your brand's templates in `$POSTWEFT_HOME/templates/<name>/`
+so the open-source `postweft` repo stays clean, and copy one into `work/<date>-<slug>` when making a post.
+
+- **Pure frames & local assets:** `video.html` defines `window.render(t)` (pure function of second `t`) and `window.ready`
+  (resolves when images and fonts are loaded). For safety, `video/capture.mjs` only serves files inside the video folder
+  (plus `/_lib/` -> `video/lib/`) and blocks `../` paths, so keep images and local `.woff2` fonts inside the template's
+  own `assets/` folder. Don't use emoji in templates; use SVG.
+- **Music:** by default `video/music.mjs` synthesizes a license-free track with effects from `POPS`, `CUTS`, `STAMPS`,
+  `BELLS`, `SUCCESS`, `TYPES` and `RISES`. To use a real `.mp3`/`.wav` file instead, put tracks in `$POSTWEFT_HOME/music/`
+  and set `export const MUSIC_TRACK = "calm.mp3"` (or an absolute path, or `video.musicTrack` in `config.json`), with
+  optional `MUSIC_OFFSET` (start second) and `MUSIC_LEVEL` (default `0.26` under speech). FFmpeg loops/trims to
+  `DURATION`, normalizes loudness (`loudnorm`), and applies soft fade-in/fade-out. Set `MUSIC_TRACK = "synth"` to force
+  the built-in generator for a single video.
+- **Caption theme:** word-by-word captions support CSS variables in `video.html`: `--caption-font`, `--caption-bg`,
+  `--caption-on-bg`, and `--caption-on-fg`.
+- **Faster audio tweaks:** after changing only music or mix levels, run `bash video/build.sh <dir> --skip-frames` to
+  reuse existing frames.
 
 ## Safety notes
 

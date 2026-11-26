@@ -51,26 +51,42 @@ user's time. Do not create anything until they pick.
 
 ## Making a video
 
-1. Copy a template: `cp -r video/templates/starter work/<date>-<slug>` (or one of the user's own templates).
+1. Copy a template: `cp -r "$POSTWEFT_HOME/templates/<name>" work/<date>-<slug>` for the brand's own templates (keep
+   brand templates in `$POSTWEFT_HOME/templates/` so the open-source `postweft` repo stays clean), or start from
+   `cp -r video/templates/starter work/<date>-<slug>`.
 2. Edit `timeline.mjs` (`DATA`, timings, `LINES` for the voice-over) and, if needed, `video.html`. Keep the hook on
    screen in the first second, aim for 10-20 seconds, and put the call to action at the end.
+   - **Language (`LANG`):** for multi-language brands, set `export const LANG = "tr"` (or `"en"`, etc.) once in
+     `timeline.mjs`. Both `voice.mjs` (via `config.json` → `voice.voices`) and `captions.mjs` use it automatically.
+   - **Music (`MUSIC_TRACK`):** to use a real `.mp3`/`.wav` track instead of the built-in synth, put tracks in
+     `$POSTWEFT_HOME/music/` and set `export const MUSIC_TRACK = "calm.mp3"` (or an absolute path, or default
+     `video.musicTrack` in `config.json`), with optional `MUSIC_OFFSET` (seconds) and `MUSIC_LEVEL` (default `0.26`
+     under speech). Set `MUSIC_TRACK = "synth"` to force the built-in generator for one video.
+   - **Local assets:** `capture.mjs` only serves files inside the video folder (plus `/_lib/`) and blocks `../` paths,
+     so keep each template's images and `.woff2` fonts inside its own `assets/` folder.
+   - **Caption styling:** customize word-by-word captions in `video.html` with CSS variables `--caption-font`,
+     `--caption-bg`, `--caption-on-bg`, and `--caption-on-fg`.
 3. Preview before the full render: run `node video/capture.mjs work/<dir> stills 0.5 2 5 9` and look at the images.
    All text must be inside the 1080x1920 frame. Keep important text out of the bottom ~350 px and the right ~150 px,
    because the platform's buttons cover them. If you cannot view images, tell the user to check the stills.
 4. Voice-over (optional): `node video/voice.mjs work/<dir>` turns every `LINES[i].text` into `voice/<i>.wav` with
-   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini, Piper, Edge TTS or a local command); a video can override it
-   with `export const VOICE = {...}` in `timeline.mjs`. Each line must fit between its `at` and `until`. When the
-   script says a line is too long, shorten the text (better) or raise `speed`. Own recordings in `voice/` are kept.
-   Write numbers, abbreviations and brand names the way they should be pronounced.
+   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini, Piper, Edge TTS or a local command); `voice.voices`
+   maps language codes to voices/models using `LANG`, and a video can override anything with `export const VOICE = {...}`
+   in `timeline.mjs`. Each line must fit between its `at` and `until`. When the script says a line is too long, shorten
+   the text (better) or raise `speed`. Own recordings in `voice/` are kept. Write numbers, abbreviations and brand names
+   the way they should be pronounced.
 5. Build: `bash video/build.sh work/<dir>` produces `work/<dir>.mp4` and the cover `work/<dir>.jpg`. Check the cover and a
    few frames before showing the user. Captions are added automatically when there is a voice-over and
-   faster-whisper is installed (`CAPTION_LANG=<code>`).
+   faster-whisper is installed (uses `CAPTION_LANG` env var, `timeline.mjs` `LANG`, or `en`). If you only change the
+   music or mix (without changing visual frames or caption timings), run `bash video/build.sh work/<dir> --skip-frames`
+   to skip re-rendering frames.
 6. No emoji inside `video.html` (headless Chromium draws boxes); use the SVG icons in `video/lib/common.js`.
 
 ## Making a carousel or image post
 
-1. `cp -r video/templates/carousel work/<date>-<slug>`, edit `DATA` in `timeline.mjs` (cover hook, one slide per tip,
-   closing call to action). For a single image post, set `TIPS = []` and `CLOSING = false`.
+1. Copy `$POSTWEFT_HOME/templates/<name>` or `cp -r video/templates/carousel work/<date>-<slug>`, edit `DATA` in
+   `timeline.mjs` (cover hook, one slide per tip, closing call to action). For a single image post, set `TIPS = []` and
+   `CLOSING = false`.
 2. `node video/capture.mjs work/<dir> slides` writes `work/<dir>-slides/01.jpg, 02.jpg ...` (1080x1350). Look at every
    slide: text must fit and read well on a phone. The cover slide decides whether people swipe.
 3. Queue it with `--media work/<dir>-slides` (see Scheduling). Limits: Instagram 2-10 items, Threads 2-20.

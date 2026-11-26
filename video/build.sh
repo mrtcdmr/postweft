@@ -15,15 +15,15 @@ FP="${FFPROBE:-${FF%ffmpeg}ffprobe}"
 # Emoji do not render reliably in headless Chromium (empty boxes): use SVG icons instead.
 if grep -nP '[\x{2600}-\x{27BF}\x{1F000}-\x{1FFFF}]' "$V/video.html"; then echo "Emoji found in video.html, replace them with SVG"; exit 1; fi
 
-# Music: the template's own music.mjs if it has one, otherwise the shared generator
-if [ -f "$V/music.mjs" ]; then node "$V/music.mjs" "$V/timeline.mjs"; else node "$HERE/music.mjs" "$V/timeline.mjs"; fi
+# Music: the template's own music.mjs if it has one, otherwise the shared generator (or MUSIC_TRACK file)
+if [ -f "$V/music.mjs" ]; then FFMPEG="$FF" node "$V/music.mjs" "$V/timeline.mjs"; else FFMPEG="$FF" node "$HERE/music.mjs" "$V/timeline.mjs"; fi
 
-# Voice-over from your text-to-speech settings ("voice" in config.json or VOICE in timeline.mjs); skipped when not set
-node "$HERE/voice.mjs" "$V"
+# Voice-over from your text-to-speech settings ("voice" in config.json, voice.voices + LANG, or VOICE in timeline.mjs)
+FFMPEG="$FF" node "$HERE/voice.mjs" "$V"
 
-# Captions only when there is a voice-over and faster-whisper is installed
+# Captions only when there is a voice-over and faster-whisper is installed (uses CAPTION_LANG env, timeline LANG, or "en")
 if [ -d "$V/voice" ] && ${PYTHON:-python3} -c "import faster_whisper" 2>/dev/null; then
-  node "$HERE/captions.mjs" "$V" "${CAPTION_LANG:-en}" || echo "captions failed, continuing without"
+  node "$HERE/captions.mjs" "$V" "${CAPTION_LANG:-}" || echo "captions failed, continuing without"
 fi
 
 [ "${2:-}" = "--skip-frames" ] || node "$HERE/capture.mjs" "$V" all

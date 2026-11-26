@@ -10,8 +10,9 @@ import { homedir } from "node:os";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { pathToFileURL, fileURLToPath } from "node:url";
+import { resolveCaptionLang } from "../lib/video.mjs";
 
-const V = resolve(process.argv[2] || "."), LANG = process.argv[3] || process.env.CAPTION_LANG || "en";
+const V = resolve(process.argv[2] || ".");
 const out = join(V, "captions.json");
 if (existsSync(join(V, "no-captions"))) process.exit(0);
 const PY = process.env.PYTHON || "python3", SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "word_times.py");
@@ -19,6 +20,7 @@ const legacyCache = join(homedir(), ".cache/social-autopilot-captions");
 const CACHE = existsSync(legacyCache) ? legacyCache : join(homedir(), ".cache/postweft-captions");
 mkdirSync(CACHE, { recursive: true });
 const M = await import(pathToFileURL(join(V, "timeline.mjs")).href + "?" + Date.now());
+const LANG = resolveCaptionLang(M, process.argv[3], process.env.CAPTION_LANG);
 const old = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : {};
 const norm = (x) => x.toLocaleLowerCase().normalize("NFC").replace(/[^\p{L}\p{N}]/gu, "");
 const words = [];

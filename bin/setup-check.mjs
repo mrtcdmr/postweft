@@ -5,10 +5,11 @@
 // Exit code 0 when nothing required is missing.
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, isAbsolute, dirname } from "node:path";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { HOME } from "../lib/data-home.mjs";
 import { checkPiper } from "../lib/piper.mjs";
+import { resolveMusicTrack, resolveVoiceSettings } from "../lib/video.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const online = process.argv.includes("--online");
@@ -18,19 +19,28 @@ const todo = (what, fix) => rows.push(["MISSING", what, fix]);
 const maybe = (what, fix) => rows.push(["optional", what, fix]);
 const readJson = (f) => { try { return JSON.parse(readFileSync(f, "utf8")); } catch { return null; } };
 const has = (cmd) => { try { execSync(cmd, { stdio: "ignore" }); return true; } catch { return false; } };
+const hasBin = (bin, args = ["--version"]) => spawnSync(bin, args, { stdio: "ignore", timeout: 10000 }).status === 0;
 
 // files
 const cfgFile = join(HOME, "config.json");
 const cfg = readJson(cfgFile);
+const hasPlatforms = Boolean(cfg && (cfg.instagram || cfg.threads || cfg.youtube || cfg.tiktok || cfg.x));
+const voiceProvider = cfg?.voice?.provider || "none";
+const voiceKey = { elevenlabs: "ELEVENLABS_API_KEY", openai: "OPENAI_API_KEY", gemini: "GEMINI_API_KEY" }[voiceProvider];
+
 if (!existsSync(cfgFile)) todo("config.json", `copy config/config.example.json to ${cfgFile}`);
 else if (!cfg) todo("config.json", "the file is not valid JSON");
 else ok("config.json");
-if (!existsSync(join(HOME, "slots.json"))) todo("slots.json", `copy config/slots.example.json to ${join(HOME, "slots.json")}`);
-else ok("slots.json");
+if (!existsSync(join(HOME, "slots.json"))) {
+  if (cfg && !hasPlatforms) maybe("slots.json", "not needed in content-only mode (copy config/slots.example.json when connecting a platform)");
+  else todo("slots.json", `copy config/slots.example.json to ${join(HOME, "slots.json")}`);
+} else ok("slots.json");
 const envFile = join(HOME, ".env");
 let env = {};
-if (!existsSync(envFile)) todo(".env", `copy config/env.example to ${envFile} and run chmod 600 on it`);
-else {
+if (!existsSync(envFile)) {
+  if (cfg && !hasPlatforms && !voiceKey) maybe(".env", "not needed yet in content-only mode (create with chmod 600 when adding tokens or API keys)");
+  else todo(".env", `copy config/env.example to ${envFile} and run chmod 600 on it`);
+} else {
   env = Object.fromEntries(readFileSync(envFile, "utf8").split("\n").filter((l) => /^[A-Z0-9_]+=/.test(l))
     .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]));
   if ((statSync(envFile).mode & 0o077) !== 0) todo(".env permissions", `run: chmod 600 ${envFile}`);
@@ -54,7 +64,7 @@ if (cfg) {
 
   // platforms
   const ig = cfg.instagram, th = cfg.threads;
-  if (!ig && !th && !cfg.youtube && !cfg.tiktok && !cfg.x) todo("platforms", 'add at least one of "instagram", "threads", "youtube", "tiktok", "x" to config.json');
+  if (!hasPlatforms) maybe("platforms", 'content-only mode (no platform connected; add "instagram", "threads", "youtube", "tiktok" or "x" to config.json when ready to publish)');
   if (ig) {
     if (!ig.userId || ig.userId === "17840000000000000") todo("instagram.userId", "set the Instagram account id (see references/setup.md)");
     else ok("instagram.userId");
@@ -111,30 +121,50 @@ if (cfg) {
 
   // reply AI
   const ai = cfg.ai?.provider || "claude";
-  const bin = { claude: cfg.ai?.bin || cfg.claude?.bin || "claude", codex: cfg.ai?.bin || "codex" }[ai];
-  if (bin && !has(`command -v ${bin}`)) todo(`reply AI (${ai})`, `"${bin}" is not installed or not on PATH`);
-  else if (ai === "gemini" && !env.GEMINI_API_KEY) todo("reply AI (gemini)", "GEMINI_API_KEY is empty in .env");
-  else if (ai === "command" && !cfg.ai?.command) todo("reply AI (command)", "ai.command is empty");
-  else if (!["claude", "codex", "gemini", "command"].includes(ai)) todo("reply AI", `unknown ai.provider "${ai}"`);
-  else ok(`reply AI: ${ai}`);
+  const hasReplyPlatform = Boolean(ig || th || cfg.youtube);
+  if (!hasPlatforms) maybe("reply AI", "unused in content-only mode (only needed once a platform is connected)");
+  else if (!hasReplyPlatform) maybe("reply AI", "unused for the configured platform(s)");
+  else {
+    const bin = { claude: cfg.ai?.bin || cfg.claude?.bin || "claude", codex: cfg.ai?.bin || "codex" }[ai];
+    if (bin && !has(`command -v ${bin}`)) todo(`reply AI (${ai})`, `"${bin}" is not installed or not on PATH`);
+    else if (ai === "gemini" && !env.GEMINI_API_KEY) todo("reply AI (gemini)", "GEMINI_API_KEY is empty in .env");
+    else if (ai === "command" && !cfg.ai?.command) todo("reply AI (command)", "ai.command is empty");
+    else if (!["claude", "codex", "gemini", "command"].includes(ai)) todo("reply AI", `unknown ai.provider "${ai}"`);
+    else ok(`reply AI: ${ai}`);
+  }
 
   // voice
-  const v = cfg.voice?.provider || "none";
-  const vkey = { elevenlabs: "ELEVENLABS_API_KEY", openai: "OPENAI_API_KEY", gemini: "GEMINI_API_KEY" }[v];
+  const v = voiceProvider;
+  const vkey = voiceKey;
+  const hasVoicesMap = Object.keys(cfg.voice?.voices || {}).length > 0;
   if (vkey && !env[vkey]) todo(`voice-over (${v})`, `${vkey} is empty in .env`);
-  else if (v === "elevenlabs" && !cfg.voice?.voiceId) todo("voice-over (elevenlabs)", "voice.voiceId is empty");
+  else if (v === "elevenlabs" && !cfg.voice?.voiceId && !hasVoicesMap) todo("voice-over (elevenlabs)", "voice.voiceId is empty");
   else if (v === "piper") {
-    try { checkPiper(cfg.voice); ok("voice-over: piper"); }
-    catch (e) { todo("voice-over (piper)", e.message); }
-  } else if (v === "edge-tts" && !has("edge-tts --version")) todo("voice-over (edge-tts)", "install with pipx install edge-tts and make sure it is on PATH");
-  else if (v === "command" && !cfg.voice?.command) todo("voice-over (command)", "voice.command is empty");
-  else ok(`voice-over: ${v}`);
+    try {
+      const langs = Object.keys(cfg.voice?.voices || {});
+      if (langs.length) {
+        if (cfg.voice?.model) checkPiper(cfg.voice);
+        for (const lang of langs) checkPiper(resolveVoiceSettings(cfg.voice, { LANG: lang }));
+      } else checkPiper(cfg.voice);
+      ok(`voice-over: piper${langs.length ? ` (${langs.join(", ")})` : ""}`);
+    } catch (e) { todo("voice-over (piper)", e.message); }
+  } else if (v === "edge-tts" && !hasBin(cfg.voice?.edgeTtsBin || "edge-tts")) todo("voice-over (edge-tts)", "install with pipx install edge-tts and make sure it is on PATH");
+  else if (v === "command" && !cfg.voice?.command && !hasVoicesMap) todo("voice-over (command)", "voice.command is empty");
+  else ok(`voice-over: ${v}${hasVoicesMap ? ` (${Object.keys(cfg.voice.voices).join(", ")})` : ""}`);
+
+  // default music track (optional)
+  if (cfg.video?.musicTrack) {
+    try {
+      resolveMusicTrack(cfg.video.musicTrack, { home: HOME });
+      ok(`music track: ${cfg.video.musicTrack}`);
+    } catch (e) { todo("video.musicTrack", e.message); }
+  }
 }
 
 // tools
-if (has("ffmpeg -version")) ok("ffmpeg"); else todo("ffmpeg", "install ffmpeg (needed to build videos)");
+if (hasBin(process.env.FFMPEG || "ffmpeg", ["-version"])) ok("ffmpeg"); else todo("ffmpeg", "install ffmpeg (needed to build videos)");
 if (existsSync(join(ROOT, "node_modules/playwright"))) ok("playwright"); else todo("playwright", "run: npm install && npx playwright install chromium");
-if (has("python3 -c 'import faster_whisper'")) ok("captions (faster-whisper)");
+if (has(`${process.env.PYTHON || "python3"} -c 'import faster_whisper'`)) ok("captions (faster-whisper)");
 else maybe("captions", "pip install faster-whisper to add captions to videos with a voice-over");
 
 // tokens (read-only calls)
@@ -166,5 +196,8 @@ if (online && cfg) {
 console.log(`data directory: ${HOME}\n`);
 for (const [s, what, fix] of rows) console.log(`${s.padEnd(8)}  ${what}${fix ? "  ->  " + fix : ""}`);
 const missing = rows.filter((r) => r[0] === "MISSING").length;
-console.log(missing ? `\n${missing} thing(s) missing.` : "\nSetup complete." + (online ? "" : " Run with --online to test the tokens."));
+const doneMsg = cfg && !hasPlatforms
+  ? "\nSetup complete (content-only mode). Add a platform to config.json when you are ready to publish."
+  : "\nSetup complete." + (online ? "" : " Run with --online to test the tokens.");
+console.log(missing ? `\n${missing} thing(s) missing.` : doneMsg);
 process.exit(missing ? 1 : 0);

@@ -2,12 +2,13 @@
 // you choose. build.sh runs it automatically; you can also run it alone to listen first:
 //   node video/voice.mjs <video-dir> [--force]
 //
-// Settings: "voice" in config.json (data directory), overridden per video by `export const VOICE = {...}` in timeline.mjs.
+// Settings: "voice" in config.json (data directory), overridden per language by "voice.voices" + `export const LANG = "tr"`
+// in timeline.mjs, and per video by `export const VOICE = {...}` in timeline.mjs.
 //   { "provider": "elevenlabs", "voiceId": "...", "model": "eleven_multilingual_v2", "speed": 1.0 }
 //   { "provider": "openai", "voice": "alloy", "model": "gpt-4o-mini-tts", "instructions": "warm, upbeat", "speed": 1.0 }
 //   { "provider": "gemini", "voice": "Kore", "model": "gemini-2.5-flash-preview-tts", "instructions": "Say cheerfully:" }
 //   { "provider": "piper", "model": "en_US-lessac-medium", "speed": 1.0 }
-//   { "provider": "edge-tts", "voice": "en-US-AndrewNeural", "speed": 1.0 }
+//   { "provider": "edge-tts", "voice": "en-US-AndrewNeural", "voices": { "en": "en-US-AndrewNeural", "tr": "tr-TR-AhmetNeural" }, "speed": 1.0 }
 //   { "provider": "command", "command": "my-tts --output {out}" }  (text on stdin)
 //   { "provider": "none" }  -> no voice (or simply no "voice" setting); you can still drop your own recordings in voice/
 // Keys go in the .env file of the data directory (or the environment): ELEVENLABS_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY.
@@ -15,18 +16,19 @@
 // recordings you put there yourself (a .wav without .json) are never overwritten.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { execFileSync, execSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { HOME } from "../lib/data-home.mjs";
 import { piperVoice } from "../lib/piper.mjs";
+import { resolveVoiceSettings, edgeTtsPcm } from "../lib/video.mjs";
 
 const V = resolve(process.argv[2] || "."), force = process.argv.includes("--force");
 const readJson = (f) => (existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : {});
 const env = { ...Object.fromEntries((existsSync(join(HOME, ".env")) ? readFileSync(join(HOME, ".env"), "utf8") : "").split("\n")
   .filter((l) => /^[A-Z0-9_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()])), ...process.env };
 const M = await import(pathToFileURL(join(V, "timeline.mjs")).href + "?" + Date.now());
-const S = { ...(readJson(join(HOME, "config.json")).voice || {}), ...(M.VOICE || {}) };
+const S = resolveVoiceSettings(readJson(join(HOME, "config.json")).voice || {}, M);
 if (!S.provider || S.provider === "none" || existsSync(join(V, "no-voice"))) process.exit(0);
 
 // 16-bit mono PCM -> WAV file
@@ -85,26 +87,8 @@ const PROVIDERS = {
   piper(text) {
     return piperVoice(S, text);
   },
-  "edge-tts"(text) {
-    const speed = S.speed ?? 1;
-    const rate = Math.round((speed - 1) * 100);
-    if (!Number.isFinite(speed) || speed <= 0 || rate <= -100 || rate > 100)
-      throw new Error("voice.speed must translate to an Edge TTS rate above -100% and at most +100%");
-
-    let mp3;
-    try {
-      mp3 = execFileSync("edge-tts", ["--voice", S.voice || "en-US-AndrewNeural", `--rate=${rate >= 0 ? "+" : ""}${rate}%`, "--file", "-"], {
-        input: text, timeout: 90000, maxBuffer: 16 * 1024 * 1024,
-      });
-    } catch (e) {
-      if (e.code === "ENOENT") throw new Error("Install edge-tts and make sure it is on PATH (see the setup guide)");
-      throw e;
-    }
-    const rateHz = 24000;
-    const pcm = execFileSync(process.env.FFMPEG || "ffmpeg", [
-      "-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-ac", "1", "-ar", String(rateHz), "-f", "s16le", "pipe:1",
-    ], { input: mp3, timeout: 30000, maxBuffer: 16 * 1024 * 1024 });
-    if (!pcm.length) throw new Error("Edge TTS returned no audio");
+  async "edge-tts"(text) {
+    const { pcm, rateHz } = await edgeTtsPcm(S, text);
     return wav(pcm, rateHz);
   },
   async command(text, out) {

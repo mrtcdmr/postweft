@@ -21,7 +21,9 @@ Run `node bin/setup-check.mjs` first and after every step: it is the checklist. 
   `Europe/Istanbul`).
 - The brand's own website domain for `allowedLinks` (or none: `[]`).
 - Which platforms: Instagram, Threads, YouTube Shorts, TikTok, X. Remove the section of a platform they do not use from
-  `config.json` (and its `slots.json` part). Suggest starting with one or two and adding the rest later.
+  `config.json` (and its `slots.json` part). Suggest starting with one or two and adding the rest later. If they want to
+  produce videos and carousels first without connecting accounts yet, remove all platform sections: `setup-check.mjs`
+  supports this content-only mode.
 
 ## 2. Brand facts (write brand.md together)
 The reply bot knows only this file, so it is worth getting right. Ask, then write short factual bullets:
@@ -45,7 +47,12 @@ Total followers → Most active times. Until they know, the example windows work
   OpenAI and Gemini need a key in `.env`. For offline Piper, choose a voice for the user's language, check its model card, run
   `bash video/install-piper.sh <voice>` and set `voice.provider` to `piper` and `voice.model` to that voice name.
   For online Edge TTS, install the community CLI with `pipx install edge-tts` and set `voice.provider` to `edge-tts`.
-  Choose `en-US-AndrewNeural` for English or `tr-TR-AhmetNeural` for Turkish in `voice.voice`.
+  Choose `en-US-AndrewNeural` for English or `tr-TR-AhmetNeural` for Turkish in `voice.voice`. For multi-language brands,
+  add `voice.voices` (for example `{ "en": "en-US-AndrewNeural", "tr": "tr-TR-AhmetNeural" }`, or Piper model names) so
+  each video only needs `export const LANG = "tr"` in `timeline.mjs` for both voice and captions.
+- Music and brand templates (optional): custom templates belong in `$POSTWEFT_HOME/templates/<name>/` (with local images
+  and `.woff2` fonts in `assets/`), and real background tracks (`.mp3`/`.wav`) can live in `$POSTWEFT_HOME/music/` and be
+  selected via `MUSIC_TRACK` in `timeline.mjs` or `video.musicTrack` in `config.json`.
 - Phone notifications: generate the topic yourself (`node -e "console.log('sa-' + require('crypto').randomBytes(12).toString('hex'))"`),
   put it in `notify.ntfyTopic`, and tell the user to install the ntfy app and subscribe to exactly that name.
   Then send a test with `node lib/notify.mjs "Test" "Hello"` after they subscribed.

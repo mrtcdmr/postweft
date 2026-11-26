@@ -1,9 +1,39 @@
-// Procedural background music + sound effects in one track (no samples, no licenses): 120 BPM pop loop.
-// PROG in timeline.mjs picks the mood: "bright" (default), "calm" or "moody". Effects are in the same key and room.
-// Usage: node music.mjs <video>/timeline.mjs   -> <video>/music.wav (44.1 kHz, 16 bit, stereo)
-import { writeFileSync } from "node:fs";
+// Background music -> <video>/music.wav (44.1 kHz, 16 bit, stereo).
+// If MUSIC_TRACK is set in timeline.mjs (or video.musicTrack in config.json), loops/cuts that audio file with FFmpeg
+// (loudnorm + soft fade-in/fade-out; set MUSIC_TRACK = "synth" or false to force the built-in synth).
+// Otherwise generates a procedural 120 BPM track + sound effects (no samples, no licenses).
+// PROG in timeline.mjs picks the synth mood: "bright" (default), "calm" or "moody".
+// Usage: node music.mjs <video>/timeline.mjs   -> <video>/music.wav
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-const T = await import(pathToFileURL(process.argv[2]).href);
+import { HOME } from "../lib/data-home.mjs";
+import { resolveMusicTrack, musicFfmpegArgs } from "../lib/video.mjs";
+
+const tlPath = resolve(process.argv[2]);
+const videoDir = dirname(tlPath);
+const outPath = join(videoDir, "music.wav");
+const T = await import(pathToFileURL(tlPath).href);
+const cfgFile = join(HOME, "config.json");
+const cfg = existsSync(cfgFile) ? JSON.parse(readFileSync(cfgFile, "utf8")) : {};
+
+const rawTrack = T.MUSIC_TRACK !== undefined ? T.MUSIC_TRACK : cfg.video?.musicTrack;
+const trackPath = resolveMusicTrack(rawTrack, { videoDir, home: HOME });
+if (trackPath) {
+  const offset = T.MUSIC_OFFSET ?? cfg.video?.musicOffset ?? 0;
+  const args = musicFfmpegArgs(trackPath, outPath, {
+    duration: T.DURATION,
+    offset,
+    fadeIn: T.MUSIC_FADE_IN,
+    fadeOut: T.MUSIC_FADE_OUT,
+  });
+  const r = spawnSync(process.env.FFMPEG || "ffmpeg", args, { stdio: "inherit" });
+  if (r.error?.code === "ENOENT") { console.error("music: ffmpeg not found (install ffmpeg or set FFMPEG)"); process.exit(1); }
+  if (r.status !== 0) process.exit(r.status ?? 1);
+  console.log(`music.wav written from ${trackPath} (offset ${offset}s, ${T.DURATION}s)`);
+  process.exit(0);
+}
 
 const SR = 44100;
 const N = Math.round(SR * T.DURATION);

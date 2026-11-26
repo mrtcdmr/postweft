@@ -58,11 +58,17 @@
     "provider": "none",
     "voiceId": "",
     "voice": "",
+    "voices": {},
     "model": "",
     "language": "",
     "speed": 1.0,
     "instructions": "",
     "command": ""
+  },
+
+  "video": {
+    "musicTrack": "",
+    "musicOffset": 0
   },
 
   "ai": {
