@@ -101,6 +101,8 @@ existing `~/.config/social-autopilot` directory. Use `POSTWEFT_HOME` to select a
    # Codex / .agents
    mkdir -p ~/.agents/skills && cp -r skill/postweft ~/.agents/skills/
    ```
+   `node bin/setup-check.mjs` warns if a global skill copy falls behind the repo, and `node bin/setup-check.mjs --online`
+   also checks GitHub for new updates. Ask your agent *"update PostWeft"* to pull updates and refresh skill copies.
    Then ask things like *"plan next week"*, *"make a reel about our new blend"*, *"what's scheduled tomorrow?"*.
 6. **Cron**: see `examples/crontab.txt`.
 
@@ -199,7 +201,7 @@ OpenAI/Gemini/Edge TTS (`voice`) and `command`.
 | `node bin/queue-add.mjs --platform x --caption-file x.txt --dry` | preview an X text post, including its time and estimated publish charge |
 | `node bin/insights.mjs [--days 60] [--json]` | best posts, formats, days and hours (read-only) |
 | `node bin/refresh-tokens.mjs [--status]` | renew the Threads and TikTok tokens (cron, weekly) |
-| `node bin/setup-check.mjs [--online]` | what is set up and what is missing (`--online` tests the tokens) |
+| `node bin/setup-check.mjs [--online]` | what is set up, missing or outdated (`--online` also tests tokens and checks GitHub for updates) |
 | `npm run check` | syntax check + tests |
 
 ## More than one account

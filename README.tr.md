@@ -62,6 +62,8 @@ Mevcut kurulumların verileri yerinde kalabilir. PostWeft `SOCIAL_AUTOPILOT_HOME
    # Codex / .agents
    mkdir -p ~/.agents/skills && cp -r skill/postweft ~/.agents/skills/
    ```
+   `node bin/setup-check.mjs` kopyalanan beceri depodan geride kalırsa uyarır; `node bin/setup-check.mjs --online` GitHub'daki
+   yeni güncellemeleri de kontrol eder. Güncellemek için asistana *"PostWeft'i güncelle"* demen yeterli.
    Sonra *"gelecek haftayı planla"*, *"yeni ürünümüz için bir Reels yap"*, *"yarın ne paylaşılacak?"* gibi şeyler söyle.
 6. **Cron**: `examples/crontab.txt` dosyasına bak.
 

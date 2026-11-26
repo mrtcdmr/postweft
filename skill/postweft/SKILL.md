@@ -140,3 +140,18 @@ and `logs/dms.log`. For results, run `node bin/insights.mjs` (best posts, averag
 `--days 30`, `--json`). Explain it in plain words; if it suggests better times, propose the `slots.json` change and
 apply it only after the user agrees. Few posts give unreliable numbers: say so instead of drawing big conclusions.
 `node bin/refresh-tokens.mjs --status` shows when the Threads token expires. A post marked `failed` or `missed` needs the user's decision; do not quietly put it back in the queue.
+
+## Updating PostWeft
+
+When the user asks to update PostWeft (or `node bin/setup-check.mjs [--online]` warns about an update or an outdated
+global skill copy):
+
+1. In the `postweft` repo folder, check `git status` first. If there are uncommitted local edits, show them and ask
+   before pulling.
+2. Pull the latest changes (`git pull --ff-only`). If `package.json` or `package-lock.json` changed, run `npm install`.
+3. Refresh any global skill copies that exist and are not symlinks to `skill/postweft` (`~/.claude/skills/postweft`,
+   `~/.gemini/config/skills/postweft`, `~/.agents/skills/postweft`). If a copy has custom edits the user might want to
+   keep, show the diff and ask first; otherwise overwrite it with `cp -r skill/postweft <parent-dir>/`.
+4. Run `npm run check` and `node bin/setup-check.mjs` to confirm everything passes, and summarize what changed
+   (`git log --oneline <old>..HEAD`). Data in `$POSTWEFT_HOME` (`config.json`, `.env`, `brand.md`, `templates/`,
+   `music/`, `queue/`) lives outside the repo and is left untouched.

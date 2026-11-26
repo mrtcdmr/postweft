@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Shows which setup steps are done and what is still missing. Safe to run any time; it never prints secret values.
-//   node bin/setup-check.mjs            files, settings and tools only (no network)
-//   node bin/setup-check.mjs --online   also asks Instagram and Threads whether the tokens work (read-only calls)
+//   node bin/setup-check.mjs            files, settings, tools and installed skill copy check (no network)
+//   node bin/setup-check.mjs --online   also tests account tokens and checks GitHub for newer PostWeft updates
 // Exit code 0 when nothing required is missing.
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, isAbsolute, dirname } from "node:path";
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { HOME } from "../lib/data-home.mjs";
 import { checkPiper } from "../lib/piper.mjs";
 import { resolveMusicTrack, resolveVoiceSettings } from "../lib/video.mjs";
+import { findSkillCopies, checkRepoUpdate } from "../lib/updates.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const online = process.argv.includes("--online");
@@ -17,6 +18,7 @@ const rows = [];
 const ok = (what) => rows.push(["ok", what]);
 const todo = (what, fix) => rows.push(["MISSING", what, fix]);
 const maybe = (what, fix) => rows.push(["optional", what, fix]);
+const warn = (what, fix) => rows.push(["update", what, fix]);
 const readJson = (f) => { try { return JSON.parse(readFileSync(f, "utf8")); } catch { return null; } };
 const has = (cmd) => { try { execSync(cmd, { stdio: "ignore" }); return true; } catch { return false; } };
 const hasBin = (bin, args = ["--version"]) => spawnSync(bin, args, { stdio: "ignore", timeout: 10000 }).status === 0;
@@ -167,6 +169,25 @@ if (existsSync(join(ROOT, "node_modules/playwright"))) ok("playwright"); else to
 if (has(`${process.env.PYTHON || "python3"} -c 'import faster_whisper'`)) ok("captions (faster-whisper)");
 else maybe("captions", "pip install faster-whisper to add captions to videos with a voice-over");
 
+// installed global skill copies (warn if out of date with this repo)
+for (const s of findSkillCopies({ repoRoot: ROOT })) {
+  if (s.status === "ok") ok(`installed skill (${s.agent}${s.linked ? ", linked" : ""})`);
+  else warn(`installed skill (${s.agent})`, `${s.path} is behind repo skill/postweft (${s.changed.join(", ")}); refresh with: cp -r "${join(ROOT, "skill/postweft")}" "${dirname(s.path)}/"`);
+}
+
+// GitHub update check (--online only)
+if (online) {
+  const upd = await checkRepoUpdate({ repoRoot: ROOT });
+  if (upd.status === "ok") ok(`PostWeft up to date (${upd.slug})`);
+  else if (upd.status === "update") {
+    const parts = [];
+    if (upd.latestTag) parts.push(`release ${upd.latestTag}`);
+    if (upd.behind) parts.push(`${upd.behind} new commit(s) on main`);
+    else if (!upd.latestTag) parts.push("new commits on main");
+    warn("PostWeft update", `${parts.join(", ")} at github.com/${upd.slug}; run git pull (or ask your agent to update PostWeft) and refresh any installed skill copies`);
+  } else maybe("PostWeft updates", `could not check GitHub (${upd.message})`);
+}
+
 // tokens (read-only calls)
 if (online && cfg) {
   const check = async (name, url, token) => {
@@ -196,8 +217,10 @@ if (online && cfg) {
 console.log(`data directory: ${HOME}\n`);
 for (const [s, what, fix] of rows) console.log(`${s.padEnd(8)}  ${what}${fix ? "  ->  " + fix : ""}`);
 const missing = rows.filter((r) => r[0] === "MISSING").length;
+const updates = rows.filter((r) => r[0] === "update").length;
+const updNote = updates ? ` (${updates} update notice${updates > 1 ? "s" : ""} above)` : "";
 const doneMsg = cfg && !hasPlatforms
-  ? "\nSetup complete (content-only mode). Add a platform to config.json when you are ready to publish."
-  : "\nSetup complete." + (online ? "" : " Run with --online to test the tokens.");
+  ? `\nSetup complete (content-only mode)${updNote}. Add a platform to config.json when you are ready to publish.`
+  : `\nSetup complete${updNote}.` + (online ? "" : " Run with --online to test tokens and check for updates.");
 console.log(missing ? `\n${missing} thing(s) missing.` : doneMsg);
 process.exit(missing ? 1 : 0);
