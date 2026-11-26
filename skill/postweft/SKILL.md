@@ -58,7 +58,7 @@ user's time. Do not create anything until they pick.
    All text must be inside the 1080x1920 frame. Keep important text out of the bottom ~350 px and the right ~150 px,
    because the platform's buttons cover them. If you cannot view images, tell the user to check the stills.
 4. Voice-over (optional): `node video/voice.mjs work/<dir>` turns every `LINES[i].text` into `voice/<i>.wav` with
-   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini or a local command); a video can override it
+   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini, Piper or a local command); a video can override it
    with `export const VOICE = {...}` in `timeline.mjs`. Each line must fit between its `at` and `until`. When the
    script says a line is too long, shorten the text (better) or raise `speed`. Own recordings in `voice/` are kept.
    Write numbers, abbreviations and brand names the way they should be pronounced.

@@ -6,7 +6,8 @@
 //   { "provider": "elevenlabs", "voiceId": "...", "model": "eleven_multilingual_v2", "speed": 1.0 }
 //   { "provider": "openai", "voice": "alloy", "model": "gpt-4o-mini-tts", "instructions": "warm, upbeat", "speed": 1.0 }
 //   { "provider": "gemini", "voice": "Kore", "model": "gemini-2.5-flash-preview-tts", "instructions": "Say cheerfully:" }
-//   { "provider": "command", "command": "piper --model en_US-lessac-medium.onnx --output_file {out}" }  (text on stdin)
+//   { "provider": "piper", "model": "en_US-lessac-medium", "speed": 1.0 }
+//   { "provider": "command", "command": "my-tts --output {out}" }  (text on stdin)
 //   { "provider": "none" }  -> no voice (or simply no "voice" setting); you can still drop your own recordings in voice/
 // Keys go in the .env file of the data directory (or the environment): ELEVENLABS_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY.
 // A line is generated again only when its text or the voice settings change (voice/<i>.json remembers them), and
@@ -17,6 +18,7 @@ import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { HOME } from "../lib/data-home.mjs";
+import { piperVoice } from "../lib/piper.mjs";
 
 const V = resolve(process.argv[2] || "."), force = process.argv.includes("--force");
 const readJson = (f) => (existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : {});
@@ -79,6 +81,9 @@ const PROVIDERS = {
     if (!data) throw new Error("Gemini returned no audio");
     return wav(Buffer.from(data, "base64"), 24000);
   },
+  piper(text) {
+    return piperVoice(S, text);
+  },
   async command(text, out) {
     if (!S.command) throw new Error('voice.command is empty');
     execSync(S.command.replaceAll("{out}", `'${out.replace(/'/g, `'\\''`)}'`), { input: text, stdio: ["pipe", "ignore", "inherit"] });
@@ -86,7 +91,7 @@ const PROVIDERS = {
   },
 };
 const make = PROVIDERS[S.provider];
-if (!make) { console.error(`unknown voice.provider "${S.provider}" (elevenlabs | openai | gemini | command | none)`); process.exit(1); }
+if (!make) { console.error(`unknown voice.provider "${S.provider}" (elevenlabs | openai | gemini | piper | command | none)`); process.exit(1); }
 
 mkdirSync(join(V, "voice"), { recursive: true });
 const settings = JSON.stringify(S);

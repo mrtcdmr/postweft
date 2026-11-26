@@ -8,6 +8,7 @@ import { join, isAbsolute, dirname } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { HOME } from "../lib/data-home.mjs";
+import { checkPiper } from "../lib/piper.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const online = process.argv.includes("--online");
@@ -122,7 +123,10 @@ if (cfg) {
   const vkey = { elevenlabs: "ELEVENLABS_API_KEY", openai: "OPENAI_API_KEY", gemini: "GEMINI_API_KEY" }[v];
   if (vkey && !env[vkey]) todo(`voice-over (${v})`, `${vkey} is empty in .env`);
   else if (v === "elevenlabs" && !cfg.voice?.voiceId) todo("voice-over (elevenlabs)", "voice.voiceId is empty");
-  else if (v === "command" && !cfg.voice?.command) todo("voice-over (command)", "voice.command is empty");
+  else if (v === "piper") {
+    try { checkPiper(cfg.voice); ok("voice-over: piper"); }
+    catch (e) { todo("voice-over (piper)", e.message); }
+  } else if (v === "command" && !cfg.voice?.command) todo("voice-over (command)", "voice.command is empty");
   else ok(`voice-over: ${v}`);
 }
 

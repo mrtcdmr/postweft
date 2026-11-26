@@ -41,8 +41,9 @@ Total followers → Most active times. Until they know, the example windows work
 - Which AI writes the replies (`ai.provider`): `claude` if Claude Code is logged in on this machine (default), `codex`,
   `gemini` (needs `GEMINI_API_KEY`) or `command`. Ask if they want automatic replies at all; if not, set
   `replyToComments: false` and skip the DM job in cron.
-- Voice-over (`voice.provider`): none, ElevenLabs, OpenAI, Gemini or a local program. Explain that the paid services
-  need a key in `.env`.
+- Voice-over (`voice.provider`): none, ElevenLabs, OpenAI, Gemini, Piper or a local program. The hosted services
+  need a key in `.env`. For offline Piper, choose a voice for the user's language, check its model card, run
+  `bash video/install-piper.sh <voice>` and set `voice.provider` to `piper` and `voice.model` to that voice name.
 - Phone notifications: generate the topic yourself (`node -e "console.log('sa-' + require('crypto').randomBytes(12).toString('hex'))"`),
   put it in `notify.ntfyTopic`, and tell the user to install the ntfy app and subscribe to exactly that name.
   Then send a test with `node lib/notify.mjs "Test" "Hello"` after they subscribed.

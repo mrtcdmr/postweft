@@ -118,13 +118,26 @@ Set `voice` in `config.json` once and every video gets a voice-over from its `LI
 | `elevenlabs` | `voiceId` (from your ElevenLabs voice library), `model`, `language`, `speed`, `stability` | `ELEVENLABS_API_KEY` |
 | `openai` | `voice` (e.g. `alloy`), `model`, `instructions` (tone, e.g. "warm and upbeat"), `speed` | `OPENAI_API_KEY` |
 | `gemini` | `voice` (e.g. `Kore`), `model`, `instructions` | `GEMINI_API_KEY` |
-| `command` | `command`: any local TTS that reads text on stdin and writes `{out}` (e.g. Piper) | none |
+| `piper` | `model`, `speed`, optional `piperBin` for an existing installation | none |
+| `command` | `command`: any local TTS that reads text on stdin and writes `{out}` | none |
 | `none` | no generated voice (default) | none |
 
 A single video can use different settings with `export const VOICE = { ... }` in its `timeline.mjs` (another voice,
 another speed). Lines are only generated again when their text or the settings change, and recordings you put in
 `voice/<i>.wav` yourself are never overwritten. If a line is longer than its slot (`until - at`), the build tells
 you so you can shorten the text or raise `speed`. Try it alone first: `node video/voice.mjs work/demo`.
+
+For free offline voice-over with [Piper](https://github.com/OHF-Voice/piper1-gpl), run
+`bash video/install-piper.sh` once. It installs Piper and the English example voice under `work/piper/`.
+The installer uses Python 3 with `venv` and pip, or `uv` if available. Then set:
+
+```json
+{ "voice": { "provider": "piper", "model": "en_US-lessac-medium", "speed": 1.0 } }
+```
+
+To install another voice, pass its name to the installer. For an existing installation, set `voice.piperBin` and
+the absolute model path in `voice.model`. Keep the model's `.onnx.json` file next to it. Check the chosen
+[voice's model card](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/VOICES.md) for its license before publishing.
 
 ## Commands
 

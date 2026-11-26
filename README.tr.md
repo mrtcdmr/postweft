@@ -87,12 +87,25 @@ Altyazı dili için: `CAPTION_LANG=tr bash video/build.sh work/demo`.
 - `elevenlabs`: `voiceId` (ElevenLabs ses kütüphanendeki sesin numarası), `model`, `language`, `speed`, `stability`. Anahtar: `ELEVENLABS_API_KEY`.
 - `openai`: `voice` (ör. `alloy`), `model`, `instructions` (ton, ör. "sıcak ve neşeli"), `speed`. Anahtar: `OPENAI_API_KEY`.
 - `gemini`: `voice` (ör. `Kore`), `model`, `instructions`. Anahtar: `GEMINI_API_KEY`.
-- `command`: metni alıp `{out}` dosyasına ses yazan herhangi bir yerel program (ör. Piper). Anahtar gerekmez.
+- `piper`: İnternetsiz ve ücretsiz seslendirme. Ayarları `model`, `speed` ve isteğe bağlı `piperBin`. API anahtarı gerekmez.
+- `command`: metni alıp `{out}` dosyasına ses yazan herhangi bir yerel program. Anahtar gerekmez.
 - `none`: seslendirme yok (varsayılan).
 
 Bir videoya özel ses ya da hız için o videonun `timeline.mjs` dosyasına `export const VOICE = { ... }` yaz. Metin ya da
 ayar değişmedikçe aynı satır yeniden üretilmez; `voice/<i>.wav` olarak kendin koyduğun kayıtların üzerine yazılmaz.
 Bir satır kendi süresine sığmazsa derleme seni uyarır. Önce sadece sesi dinlemek için: `node video/voice.mjs work/demo`.
+
+Piper'ı Türkçe bir sesle kurmak için `bash video/install-piper.sh tr_TR-dfki-medium` çalıştır.
+Kurulum için Python 3'ün `venv` ve pip desteği veya `uv` gerekir. Motor ve ses modeli `work/piper/` altında
+kurulur. `config.json` içindeki `voice` bölümünü şöyle ayarla:
+
+```json
+{ "voice": { "provider": "piper", "model": "tr_TR-dfki-medium", "speed": 1.0 } }
+```
+
+Başka bir ses seçmek için kurulum komutuna o sesin adını ver. Türkçe DFKI sesinin model kartında kaynak
+veri kümesi için ticari olmayan kullanım lisansı belirtiliyor. Kullanacağın modelin lisansını kontrol et.
+[Türkçe DFKI model kartı](https://huggingface.co/rhasspy/piper-voices/blob/main/tr/tr_TR/dfki/medium/MODEL_CARD)
 
 ## Lisans
 
