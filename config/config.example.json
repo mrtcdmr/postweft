@@ -38,6 +38,17 @@
     "ntfyTopic": "pick-a-long-random-name-here"
   },
 
+  "voice": {
+    "provider": "none",
+    "voiceId": "",
+    "voice": "",
+    "model": "",
+    "language": "",
+    "speed": 1.0,
+    "instructions": "",
+    "command": ""
+  },
+
   "ai": {
     "provider": "claude",
     "model": "",

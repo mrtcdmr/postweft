@@ -49,8 +49,11 @@ reel beats three weak ones. Keep it realistic for the user's time. Do not create
 3. Preview before the full render: run `node video/capture.mjs work/<dir> stills 0.5 2 5 9` and look at the images.
    All text must be inside the 1080x1920 frame. Keep important text out of the bottom ~350 px and the right ~150 px,
    because the platform's buttons cover them. If you cannot view images, tell the user to check the stills.
-4. Voice-over (optional): produce one WAV per line into `work/<dir>/voice/<index>.wav` with the user's TTS tool or
-   recordings. Each line must fit between its `at` and `until`.
+4. Voice-over (optional): `node video/voice.mjs work/<dir>` turns every `LINES[i].text` into `voice/<i>.wav` with
+   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini or a local command); a video can override it
+   with `export const VOICE = {...}` in `timeline.mjs`. Each line must fit between its `at` and `until`. When the
+   script says a line is too long, shorten the text (better) or raise `speed`. Own recordings in `voice/` are kept.
+   Write numbers, abbreviations and brand names the way they should be pronounced.
 5. Build: `bash video/build.sh work/<dir>` produces `work/<dir>.mp4` and the cover `work/<dir>.jpg`. Check the cover and a
    few frames before showing the user. Captions are added automatically when there is a voice-over and
    faster-whisper is installed (`CAPTION_LANG=<code>`).

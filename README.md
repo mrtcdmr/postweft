@@ -6,7 +6,8 @@ Run a small brand's Instagram and Threads with an AI coding agent as your social
 **Claude Code, OpenAI Codex or Google Antigravity / Gemini CLI**, or switch between them. Free and open source (MIT).
 
 - **Video from HTML.** Vertical 1080x1920 videos from simple HTML templates, rendered frame by frame. Built-in
-  license-free music generator, optional voice-over and word-by-word captions.
+  license-free music generator, voice-over from ElevenLabs, OpenAI, Gemini or a local TTS,
+  and word-by-word captions.
 - **Posting queue with best times.** Each post is a small JSON file. It goes into the next free slot from your own
   "best times" table and is published on time by cron.
 - **Replies with judgment.** An AI of your choice (Claude, Codex, Gemini or any command) answers comments on your
@@ -83,14 +84,29 @@ bash video/build.sh work/demo          # -> work/demo.mp4 and work/demo.jpg (mus
 node video/capture.mjs work/demo stills 0.5 4 11   # quick preview frames in work/demo/stills/
 ```
 
-Add a voice-over by putting `work/demo/voice/<i>.wav` files next to the template (one per entry in `LINES`), from
-any text-to-speech tool or your own recordings, and build again.
+## Voice-over
+
+Set `voice` in `config.json` once and every video gets a voice-over from its `LINES` texts:
+
+| provider | settings | key in `.env` |
+|---|---|---|
+| `elevenlabs` | `voiceId` (from your ElevenLabs voice library), `model`, `language`, `speed`, `stability` | `ELEVENLABS_API_KEY` |
+| `openai` | `voice` (e.g. `alloy`), `model`, `instructions` (tone, e.g. "warm and upbeat"), `speed` | `OPENAI_API_KEY` |
+| `gemini` | `voice` (e.g. `Kore`), `model`, `instructions` | `GEMINI_API_KEY` |
+| `command` | `command`: any local TTS that reads text on stdin and writes `{out}` (e.g. Piper) | none |
+| `none` | no generated voice (default) | none |
+
+A single video can use different settings with `export const VOICE = { ... }` in its `timeline.mjs` (another voice,
+another speed). Lines are only generated again when their text or the settings change, and recordings you put in
+`voice/<i>.wav` yourself are never overwritten. If a line is longer than its slot (`until - at`), the build tells
+you so you can shorten the text or raise `speed`. Try it alone first: `node video/voice.mjs work/demo`.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `bash video/build.sh <dir>` | music + captions + frames + mix -> `<dir>.mp4` and cover `<dir>.jpg` |
+| `bash video/build.sh <dir>` | music + voice-over + captions + frames + mix -> `<dir>.mp4` and cover `<dir>.jpg` |
+| `node video/voice.mjs <dir> [--force]` | generate the voice-over only, to listen first |
 | `node video/capture.mjs <dir> stills 1 2.5` | preview frames only |
 | `node bin/queue-add.mjs --platform instagram --video x.mp4 --caption-file x.txt [--at 2026-12-01T19:00] [--dry]` | add a post (next best slot if no `--at`) |
 | `node bin/publish-queue.mjs` | publish what is due (cron, every 5 min) |

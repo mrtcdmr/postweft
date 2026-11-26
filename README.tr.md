@@ -7,7 +7,7 @@ Küçük bir markanın Instagram ve Threads hesaplarını bir yapay zekâ asista
 geçiş de yapabilirsin.
 
 - **HTML'den video.** Basit HTML şablonlarından dikey 1080x1920 video, kare kare üretilir. Telifsiz müzik üretici,
-  isteğe bağlı seslendirme ve kelime kelime altyazı içerir.
+  seslendirme (ElevenLabs, OpenAI, Gemini ya da bilgisayardaki bir seslendirme programı) ve kelime kelime altyazı içerir.
 - **En iyi saatlerde paylaşım kuyruğu.** Her paylaşım küçük bir JSON dosyasıdır. Senin "en iyi saatler" tablondaki ilk
   boş zamana yerleşir, cron zamanı gelince yayınlar.
 - **Düşünerek cevap.** Seçtiğin yapay zekâ (Claude, Codex, Gemini ya da herhangi bir komut) kendi gönderilerine
@@ -60,6 +60,20 @@ bash video/build.sh work/demo          # -> work/demo.mp4 ve kapak work/demo.jpg
 ```
 
 Altyazı dili için: `CAPTION_LANG=tr bash video/build.sh work/demo`.
+
+## Seslendirme
+
+`config.json` içindeki `voice` bölümünü bir kez ayarla, her video `LINES` metinlerinden kendiliğinden seslendirilsin:
+
+- `elevenlabs`: `voiceId` (ElevenLabs ses kütüphanendeki sesin numarası), `model`, `language`, `speed`, `stability`. Anahtar: `ELEVENLABS_API_KEY`.
+- `openai`: `voice` (ör. `alloy`), `model`, `instructions` (ton, ör. "sıcak ve neşeli"), `speed`. Anahtar: `OPENAI_API_KEY`.
+- `gemini`: `voice` (ör. `Kore`), `model`, `instructions`. Anahtar: `GEMINI_API_KEY`.
+- `command`: metni alıp `{out}` dosyasına ses yazan herhangi bir yerel program (ör. Piper). Anahtar gerekmez.
+- `none`: seslendirme yok (varsayılan).
+
+Bir videoya özel ses ya da hız için o videonun `timeline.mjs` dosyasına `export const VOICE = { ... }` yaz. Metin ya da
+ayar değişmedikçe aynı satır yeniden üretilmez; `voice/<i>.wav` olarak kendin koyduğun kayıtların üzerine yazılmaz.
+Bir satır kendi süresine sığmazsa derleme seni uyarır. Önce sadece sesi dinlemek için: `node video/voice.mjs work/demo`.
 
 ## Lisans
 
