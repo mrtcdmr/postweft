@@ -126,7 +126,8 @@ if (cfg) {
   else if (v === "piper") {
     try { checkPiper(cfg.voice); ok("voice-over: piper"); }
     catch (e) { todo("voice-over (piper)", e.message); }
-  } else if (v === "command" && !cfg.voice?.command) todo("voice-over (command)", "voice.command is empty");
+  } else if (v === "edge-tts" && !has("edge-tts --version")) todo("voice-over (edge-tts)", "install with pipx install edge-tts and make sure it is on PATH");
+  else if (v === "command" && !cfg.voice?.command) todo("voice-over (command)", "voice.command is empty");
   else ok(`voice-over: ${v}`);
 }
 

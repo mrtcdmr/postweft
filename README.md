@@ -20,7 +20,7 @@ Run a small brand's Instagram, Threads, YouTube Shorts, TikTok and X with an AI 
   same workflow: plan, write, render, show you, and publish only after you say yes. A shared `HANDOFF.md` lets you
   switch agents mid-week (for example when one runs out of quota) without losing track.
 
-Everything uses the **official** APIs: Instagram Graph API, Threads API, YouTube Data API, TikTok Content Posting API and X API v2. There is no browser automation, no scraping, no
+Social media publishing and account management use the **official** APIs: Instagram Graph API, Threads API, YouTube Data API, TikTok Content Posting API and X API v2. There is no browser automation, no scraping, no
 auto-following and no commenting on strangers' posts. Those get accounts banned, and they are spam.
 
 > v0.1.0 is the first early release. The code was extracted from a setup that runs a real brand's accounts daily, then rewritten to be
@@ -119,6 +119,7 @@ Set `voice` in `config.json` once and every video gets a voice-over from its `LI
 | `openai` | `voice` (e.g. `alloy`), `model`, `instructions` (tone, e.g. "warm and upbeat"), `speed` | `OPENAI_API_KEY` |
 | `gemini` | `voice` (e.g. `Kore`), `model`, `instructions` | `GEMINI_API_KEY` |
 | `piper` | `model`, `speed`, optional `piperBin` for an existing installation | none |
+| `edge-tts` | `voice` (e.g. `en-US-AndrewNeural`), `speed` | none |
 | `command` | `command`: any local TTS that reads text on stdin and writes `{out}` | none |
 | `none` | no generated voice (default) | none |
 
@@ -138,6 +139,16 @@ The installer uses Python 3 with `venv` and pip, or `uv` if available. Then set:
 To install another voice, pass its name to the installer. For an existing installation, set `voice.piperBin` and
 the absolute model path in `voice.model`. Keep the model's `.onnx.json` file next to it. Check the chosen
 [voice's model card](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/VOICES.md) for its license before publishing.
+
+For Edge TTS, install the community CLI with `pipx install edge-tts` and make sure it is on your PATH.
+It sends the narration text to Microsoft Edge's online speech service. PostWeft uses FFmpeg to convert
+the audio to WAV. Set:
+
+```json
+{ "voice": { "provider": "edge-tts", "voice": "en-US-AndrewNeural", "speed": 1.0 } }
+```
+
+For Turkish, set `voice` to `tr-TR-AhmetNeural`. [Edge TTS documentation](https://github.com/rany2/edge-tts)
 
 ## Commands
 

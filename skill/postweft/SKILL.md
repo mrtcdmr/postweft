@@ -27,7 +27,7 @@ themselves; never ask for them in the chat.
    Approval is per post, not for the rest of the session, unless the user clearly says otherwise.
 2. **Brand facts only.** Never invent features, prices, dates or claims. If it is not in `brand.md`, ask.
 3. **Never print or paste secrets.** Do not `cat` the `.env` file; tokens stay there.
-4. **Official APIs only.** Do not automate a browser to post, comment, like or follow, and do not comment on other
+4. **Official social platform APIs only.** Do not automate a browser to post, comment, like or follow, and do not comment on other
    people's posts to promote the brand: platforms ban accounts for it.
 5. Follow `references/platform-rules.md` for limits (hashtags, lengths, formats). Check every caption against it.
 
@@ -58,7 +58,7 @@ user's time. Do not create anything until they pick.
    All text must be inside the 1080x1920 frame. Keep important text out of the bottom ~350 px and the right ~150 px,
    because the platform's buttons cover them. If you cannot view images, tell the user to check the stills.
 4. Voice-over (optional): `node video/voice.mjs work/<dir>` turns every `LINES[i].text` into `voice/<i>.wav` with
-   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini, Piper or a local command); a video can override it
+   the provider in `config.json` → `voice` (ElevenLabs, OpenAI, Gemini, Piper, Edge TTS or a local command); a video can override it
    with `export const VOICE = {...}` in `timeline.mjs`. Each line must fit between its `at` and `until`. When the
    script says a line is too long, shorten the text (better) or raise `speed`. Own recordings in `voice/` are kept.
    Write numbers, abbreviations and brand names the way they should be pronounced.

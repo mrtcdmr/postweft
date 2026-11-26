@@ -7,6 +7,7 @@
 //   { "provider": "openai", "voice": "alloy", "model": "gpt-4o-mini-tts", "instructions": "warm, upbeat", "speed": 1.0 }
 //   { "provider": "gemini", "voice": "Kore", "model": "gemini-2.5-flash-preview-tts", "instructions": "Say cheerfully:" }
 //   { "provider": "piper", "model": "en_US-lessac-medium", "speed": 1.0 }
+//   { "provider": "edge-tts", "voice": "en-US-AndrewNeural", "speed": 1.0 }
 //   { "provider": "command", "command": "my-tts --output {out}" }  (text on stdin)
 //   { "provider": "none" }  -> no voice (or simply no "voice" setting); you can still drop your own recordings in voice/
 // Keys go in the .env file of the data directory (or the environment): ELEVENLABS_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY.
@@ -14,7 +15,7 @@
 // recordings you put there yourself (a .wav without .json) are never overwritten.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { HOME } from "../lib/data-home.mjs";
@@ -84,6 +85,28 @@ const PROVIDERS = {
   piper(text) {
     return piperVoice(S, text);
   },
+  "edge-tts"(text) {
+    const speed = S.speed ?? 1;
+    const rate = Math.round((speed - 1) * 100);
+    if (!Number.isFinite(speed) || speed <= 0 || rate <= -100 || rate > 100)
+      throw new Error("voice.speed must translate to an Edge TTS rate above -100% and at most +100%");
+
+    let mp3;
+    try {
+      mp3 = execFileSync("edge-tts", ["--voice", S.voice || "en-US-AndrewNeural", `--rate=${rate >= 0 ? "+" : ""}${rate}%`, "--file", "-"], {
+        input: text, timeout: 90000, maxBuffer: 16 * 1024 * 1024,
+      });
+    } catch (e) {
+      if (e.code === "ENOENT") throw new Error("Install edge-tts and make sure it is on PATH (see the setup guide)");
+      throw e;
+    }
+    const rateHz = 24000;
+    const pcm = execFileSync(process.env.FFMPEG || "ffmpeg", [
+      "-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-ac", "1", "-ar", String(rateHz), "-f", "s16le", "pipe:1",
+    ], { input: mp3, timeout: 30000, maxBuffer: 16 * 1024 * 1024 });
+    if (!pcm.length) throw new Error("Edge TTS returned no audio");
+    return wav(pcm, rateHz);
+  },
   async command(text, out) {
     if (!S.command) throw new Error('voice.command is empty');
     execSync(S.command.replaceAll("{out}", `'${out.replace(/'/g, `'\\''`)}'`), { input: text, stdio: ["pipe", "ignore", "inherit"] });
@@ -91,7 +114,7 @@ const PROVIDERS = {
   },
 };
 const make = PROVIDERS[S.provider];
-if (!make) { console.error(`unknown voice.provider "${S.provider}" (elevenlabs | openai | gemini | piper | command | none)`); process.exit(1); }
+if (!make) { console.error(`unknown voice.provider "${S.provider}" (elevenlabs | openai | gemini | piper | edge-tts | command | none)`); process.exit(1); }
 
 mkdirSync(join(V, "voice"), { recursive: true });
 const settings = JSON.stringify(S);

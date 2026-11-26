@@ -16,5 +16,5 @@ them exactly:
 - Node.js 20+, ES modules, no build step. Run `npm run check` after every change (syntax + tests).
 - Keep it brand-neutral: no real brand names, account ids, tokens or personal data in the repo.
 - Official platform APIs only (Instagram Graph API, Threads API, YouTube Data API, TikTok Content Posting API, X API v2).
-  Do not add browser automation, scraping, unofficial APIs, or commenting on other people's posts.
+  Do not add browser automation, scraping, unofficial social platform APIs, or commenting on other people's posts.
 - Video templates: every frame must be a pure function of time (`window.render(t)`), with no emoji (use SVG).

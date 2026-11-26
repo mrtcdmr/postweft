@@ -22,7 +22,7 @@ geçiş de yapabilirsin.
   çalışma düzenini yükler: planla, yaz, videoyu üret, sana göster, sadece sen "evet" deyince yayınla. Ortak
   `HANDOFF.md` devir notu sayesinde hafta ortasında asistan değiştirebilirsin (ör. birinin kotası bitince).
 
-Her şey **resmî** sistemlerle çalışır: Instagram Graph API, Threads API, YouTube Data API, TikTok Content Posting API ve X API v2. Tarayıcı otomasyonu, veri kazıma, otomatik takip ve
+Paylaşım ve hesap yönetimi **resmî** sistemlerle çalışır: Instagram Graph API, Threads API, YouTube Data API, TikTok Content Posting API ve X API v2. Tarayıcı otomasyonu, veri kazıma, otomatik takip ve
 yabancıların gönderilerine yorum yoktur. Bunlar hesap kapattırır ve spam'dir.
 
 > v0.1.0 ilk erken sürüm. Kod, gerçek bir markanın hesaplarını her gün yöneten bir düzenden çıkarıldı ve markadan bağımsız
@@ -88,6 +88,7 @@ Altyazı dili için: `CAPTION_LANG=tr bash video/build.sh work/demo`.
 - `openai`: `voice` (ör. `alloy`), `model`, `instructions` (ton, ör. "sıcak ve neşeli"), `speed`. Anahtar: `OPENAI_API_KEY`.
 - `gemini`: `voice` (ör. `Kore`), `model`, `instructions`. Anahtar: `GEMINI_API_KEY`.
 - `piper`: İnternetsiz ve ücretsiz seslendirme. Ayarları `model`, `speed` ve isteğe bağlı `piperBin`. API anahtarı gerekmez.
+- `edge-tts`: İnternet üzerinden seslendirme. Ayarları `voice` ve `speed`. API anahtarı gerekmez.
 - `command`: metni alıp `{out}` dosyasına ses yazan herhangi bir yerel program. Anahtar gerekmez.
 - `none`: seslendirme yok (varsayılan).
 
@@ -106,6 +107,15 @@ kurulur. `config.json` içindeki `voice` bölümünü şöyle ayarla:
 Başka bir ses seçmek için kurulum komutuna o sesin adını ver. Türkçe DFKI sesinin model kartında kaynak
 veri kümesi için ticari olmayan kullanım lisansı belirtiliyor. Kullanacağın modelin lisansını kontrol et.
 [Türkçe DFKI model kartı](https://huggingface.co/rhasspy/piper-voices/blob/main/tr/tr_TR/dfki/medium/MODEL_CARD)
+
+Edge TTS için topluluk aracını `pipx install edge-tts` ile kur. Araç seslendirme metnini Microsoft Edge'in çevrimiçi
+ses hizmetine gönderir. PostWeft çıkan sesi FFmpeg ile WAV'a dönüştürür. Türkçe için şu ayarı kullan:
+
+```json
+{ "voice": { "provider": "edge-tts", "voice": "tr-TR-AhmetNeural", "speed": 1.0 } }
+```
+
+İngilizce için `en-US-AndrewNeural` seçebilirsin. [Edge TTS belgeleri](https://github.com/rany2/edge-tts)
 
 ## Lisans
 
